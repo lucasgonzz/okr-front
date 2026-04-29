@@ -1,0 +1,594 @@
+"use client";
+
+import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { AppShell } from "@/components/layout/app-shell";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api";
+import { useData } from "@/lib/data-context";
+import type { Quarter } from "@/lib/types";
+import {
+  Users,
+  Building2,
+  Shield,
+  User,
+  Plus,
+  Search,
+  MoreHorizontal,
+} from "lucide-react";
+
+export default function AdminPage() {
+  const {
+    users,
+    departments,
+    selected_quarter,
+    set_selected_quarter,
+    refreshUsers,
+    refreshDepartments,
+  } = useData();
+  const { toast } = useToast();
+  const [selectedQuarter, setSelectedQuarter] = useState<Quarter>(selected_quarter as Quarter);
+  const [searchValue, setSearchValue] = useState("");
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    departmentId: "",
+    role: "user" as "admin" | "user",
+    avatar: "",
+    email: "",
+    password: "",
+  });
+
+  useEffect(() => {
+    void Promise.all([refreshUsers(), refreshDepartments()]);
+  }, [refreshUsers, refreshDepartments]);
+
+  // Filter users based on search
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      return (
+        user.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchValue.toLowerCase()) ||
+        (user.department || "").toLowerCase().includes(searchValue.toLowerCase())
+      );
+    });
+  }, [users, searchValue]);
+
+  // Role badge colors - only admin and user roles
+  const roleBadgeVariants: Record<string, string> = {
+    admin: "bg-primary/15 text-primary border-primary/30",
+    user: "bg-muted text-muted-foreground border-border",
+  };
+
+  // Role icons
+  const roleIcons: Record<string, typeof User> = {
+    admin: Shield,
+    user: User,
+  };
+
+  // Stats
+  const totalUsers = users.length;
+  const adminCount = users.filter((u) => u.role === "admin").length;
+  const userCount = users.filter((u) => u.role === "user").length;
+
+  const resetCreateUserForm = () => {
+    setNewUserForm({
+      departmentId: "",
+      role: "user",
+      avatar: "",
+      email: "",
+      password: "",
+    });
+  };
+
+  const handleCreateUser = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!newUserForm.departmentId || !newUserForm.email || !newUserForm.password) {
+      toast({
+        title: "Campos incompletos",
+        description: "Completá departamento, email y password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingUser(true);
+    const inferredName = newUserForm.email.split("@")[0] || "Nuevo usuario";
+
+    try {
+      await apiFetch<{ user: unknown }>("/users", {
+        method: "POST",
+        body: JSON.stringify({
+          department_id: newUserForm.departmentId,
+          role: newUserForm.role,
+          avatar: newUserForm.avatar || null,
+          email: newUserForm.email,
+          password: newUserForm.password,
+          name: inferredName,
+        }),
+      });
+
+      await refreshUsers();
+      setIsCreateUserOpen(false);
+      resetCreateUserForm();
+      toast({
+        title: "Usuario creado",
+        description: "Se creó dentro de la misma company del admin actual.",
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo crear el usuario",
+        description: error instanceof Error ? error.message : "Ocurrió un error inesperado.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  return (
+    <AppShell
+      selectedQuarter={selectedQuarter}
+      onQuarterChange={(quarter) => {
+        setSelectedQuarter(quarter);
+        set_selected_quarter(quarter);
+      }}
+    >
+      <div className="mx-auto max-w-[1400px]">
+        {/* Page Header */}
+        <div className="mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Admin
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage users, departments, and organizational structure
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0 }}
+          >
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/15">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-foreground">
+                      {totalUsers}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Total Users</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.05 }}
+          >
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-info/15">
+                    <Shield className="h-6 w-6 text-info" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-foreground">
+                      {adminCount}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Admins</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
+                    <User className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-foreground">
+                      {userCount}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Users</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+          >
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
+                    <Building2 className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-foreground">
+                      {departments.length}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Departments</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Users Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="lg:col-span-2"
+          >
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Users
+                </CardTitle>
+                <Sheet
+                  open={isCreateUserOpen}
+                  onOpenChange={(open) => {
+                    setIsCreateUserOpen(open);
+                    if (!open) resetCreateUserForm();
+                  }}
+                >
+                  <Button size="sm" className="gap-2" onClick={() => setIsCreateUserOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                    Create User
+                  </Button>
+                  <SheetContent side="right" className="sm:max-w-md">
+                    <SheetHeader>
+                      <SheetTitle>Crear nuevo usuario</SheetTitle>
+                      <SheetDescription>
+                        El usuario se creará en la misma company del admin autenticado.
+                      </SheetDescription>
+                    </SheetHeader>
+                    <form onSubmit={handleCreateUser} className="flex h-full flex-col">
+                      <div className="grid gap-4 px-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="department">Departamento</Label>
+                          <Select
+                            value={newUserForm.departmentId}
+                            onValueChange={(value) =>
+                              setNewUserForm((prev) => ({ ...prev, departmentId: value }))
+                            }
+                          >
+                            <SelectTrigger id="department" className="w-full">
+                              <SelectValue placeholder="Seleccioná un departamento" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {departments.map((department) => (
+                                <SelectItem key={department.id} value={department.id}>
+                                  {department.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="role">Rol</Label>
+                          <Select
+                            value={newUserForm.role}
+                            onValueChange={(value: "admin" | "user") =>
+                              setNewUserForm((prev) => ({ ...prev, role: value }))
+                            }
+                          >
+                            <SelectTrigger id="role" className="w-full">
+                              <SelectValue placeholder="Seleccioná un rol" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="user">User</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="avatar">Avatar (URL)</Label>
+                          <Input
+                            id="avatar"
+                            type="url"
+                            placeholder="https://..."
+                            value={newUserForm.avatar}
+                            onChange={(e) =>
+                              setNewUserForm((prev) => ({ ...prev, avatar: e.target.value }))
+                            }
+                          />
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            required
+                            placeholder="usuario@empresa.com"
+                            value={newUserForm.email}
+                            onChange={(e) =>
+                              setNewUserForm((prev) => ({ ...prev, email: e.target.value }))
+                            }
+                          />
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="password">Password</Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            required
+                            minLength={6}
+                            placeholder="********"
+                            value={newUserForm.password}
+                            onChange={(e) =>
+                              setNewUserForm((prev) => ({ ...prev, password: e.target.value }))
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <SheetFooter className="mt-6 border-t">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setIsCreateUserOpen(false);
+                            resetCreateUserForm();
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button type="submit" disabled={isCreatingUser}>
+                          {isCreatingUser ? "Creando..." : "Crear usuario"}
+                        </Button>
+                      </SheetFooter>
+                    </form>
+                  </SheetContent>
+                </Sheet>
+              </CardHeader>
+              <CardContent>
+                {/* Search */}
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search users..."
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    className="pl-9 bg-background"
+                  />
+                </div>
+
+                {/* User Cards Grid */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {filteredUsers.map((user, index) => {
+                    const RoleIcon = roleIcons[user.role];
+                    return (
+                      <motion.div
+                        key={user.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.25 + index * 0.03 }}
+                        className="group flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary/30 hover:bg-secondary/30 transition-all cursor-pointer"
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user.avatar} />
+                          <AvatarFallback className="bg-secondary text-secondary-foreground">
+                            {user.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {user.name}
+                            </p>
+                            <Badge
+                              variant="outline"
+                              className={`text-xs capitalize ${roleBadgeVariants[user.role]}`}
+                            >
+                              <RoleIcon className="mr-1 h-3 w-3" />
+                              {user.role}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {user.email}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {user.department}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Right Column - Departments & Org Structure */}
+          <div className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.25 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    Departments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {departments.map((dept, index) => (
+                      <motion.div
+                        key={dept.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: 0.3 + index * 0.03 }}
+                        className="group flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
+                      >
+                        <div
+                          className="h-3 w-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: dept.color }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground">
+                            {dept.name}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Department Assignment Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+          className="mt-6"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                Department Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table className="min-w-[760px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Head</TableHead>
+                    <TableHead className="text-center">Members</TableHead>
+                    <TableHead className="text-center">Objectives</TableHead>
+                    <TableHead className="text-center">Avg Progress</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {departments.map((dept) => (
+                    <TableRow key={dept.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: dept.color }}
+                          />
+                          <span className="font-medium">{dept.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {dept.head ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={dept.head.avatar} />
+                              <AvatarFallback className="text-xs">
+                                {dept.head.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{dept.head.name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {users.filter((user) => user.departmentId === dept.id).length}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        —
+                      </TableCell>
+                      <TableCell className="text-center">
+                        —
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    </AppShell>
+  );
+}

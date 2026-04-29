@@ -1,0 +1,325 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { apiFetch } from "@/lib/api";
+import type { Department, Objective, KeyResult, QuarterModel, REMI, User } from "@/lib/types";
+
+interface DataContextType {
+  objectives: Objective[];
+  remis: REMI[];
+  users: User[];
+  departments: Department[];
+  quarters: QuarterModel[];
+  selected_quarter: string;
+  set_selected_quarter: (quarter: string) => void;
+  is_loading: boolean;
+  refreshObjectives: () => Promise<void>;
+  refreshRemis: () => Promise<void>;
+  refreshUsers: () => Promise<void>;
+  refreshDepartments: () => Promise<void>;
+  refreshQuarters: () => Promise<void>;
+  refreshData: () => Promise<void>;
+  addObjective: (objective: Objective) => Promise<void>;
+  updateObjective: (id: string, updates: Partial<Objective>) => Promise<void>;
+  deleteObjective: (id: string) => Promise<void>;
+  addKeyResult: (objectiveId: string, kr: KeyResult) => Promise<void>;
+  updateKeyResult: (objectiveId: string, krId: string, updates: Partial<KeyResult>) => Promise<void>;
+  deleteKeyResult: (objectiveId: string, krId: string) => Promise<void>;
+}
+
+const DataContext = createContext<DataContextType | undefined>(undefined);
+
+export function DataProvider({ children }: { children: ReactNode }) {
+  const [objectives, setObjectives] = useState<Objective[]>([]);
+  const [remis, setRemis] = useState<REMI[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [quarters, setQuarters] = useState<QuarterModel[]>([]);
+  const [selected_quarter, set_selected_quarter] = useState<string>("Q4-2024");
+  const [is_loading, set_is_loading] = useState<boolean>(true);
+
+  const refreshObjectives = useCallback(async () => {
+    set_is_loading(true);
+    try {
+      const objectives_res = await apiFetch<{ data: Objective[] }>(
+        `/objectives${selected_quarter ? `?quarter=${encodeURIComponent(selected_quarter)}` : ""}`
+      );
+      setObjectives(objectives_res.data || []);
+    } catch {
+      setObjectives([]);
+    } finally {
+      set_is_loading(false);
+    }
+  }, [selected_quarter]);
+
+  const refreshRemis = useCallback(async () => {
+    set_is_loading(true);
+    try {
+      const remis_res = await apiFetch<{ data: REMI[] }>("/remis");
+      setRemis(remis_res.data || []);
+    } catch {
+      setRemis([]);
+    } finally {
+      set_is_loading(false);
+    }
+  }, []);
+
+  const refreshUsers = useCallback(async () => {
+    set_is_loading(true);
+    try {
+      const users_res = await apiFetch<{ data: User[] }>("/users");
+      setUsers(users_res.data || []);
+    } catch {
+      setUsers([]);
+    } finally {
+      set_is_loading(false);
+    }
+  }, []);
+
+  const refreshDepartments = useCallback(async () => {
+    set_is_loading(true);
+    try {
+      const departments_res = await apiFetch<{ data: Department[] }>("/departments");
+      setDepartments(departments_res.data || []);
+    } catch {
+      setDepartments([]);
+    } finally {
+      set_is_loading(false);
+    }
+  }, []);
+
+  const refreshQuarters = useCallback(async () => {
+    set_is_loading(true);
+    try {
+      const quarters_res = await apiFetch<{ data: QuarterModel[] }>("/quarters");
+      setQuarters(quarters_res.data || []);
+    } catch {
+      setQuarters([]);
+    } finally {
+      set_is_loading(false);
+    }
+  }, []);
+
+  const refreshData = useCallback(async () => {
+    set_is_loading(true);
+    try {
+      await Promise.all([
+        apiFetch<{ data: Objective[] }>(
+          `/objectives${selected_quarter ? `?quarter=${encodeURIComponent(selected_quarter)}` : ""}`
+        ).then((res) => setObjectives(res.data || [])),
+        apiFetch<{ data: REMI[] }>("/remis").then((res) => setRemis(res.data || [])),
+        apiFetch<{ data: User[] }>("/users").then((res) => setUsers(res.data || [])),
+        apiFetch<{ data: Department[] }>("/departments").then((res) => setDepartments(res.data || [])),
+        apiFetch<{ data: QuarterModel[] }>("/quarters").then((res) => setQuarters(res.data || [])),
+      ]);
+    } catch {
+      setObjectives([]);
+      setRemis([]);
+      setUsers([]);
+      setDepartments([]);
+      setQuarters([]);
+    } finally {
+      set_is_loading(false);
+    }
+  }, [selected_quarter]);
+
+  useEffect(() => {
+    void refreshQuarters();
+  }, [refreshQuarters]);
+
+  const addObjective = async (objective: Objective) => {
+    const payload = {
+      title: objective.title,
+      description: objective.description,
+      department_id: objective.department.id,
+      owner_id: objective.owner.id,
+      quarter: objective.quarter,
+      quarter_id: objective.quarterId,
+      remi_id: objective.remi?.id ?? null,
+      calculation_mode: objective.calculationMode,
+      manual_progress: objective.manualProgress ?? null,
+      manual_status: objective.manualStatus ?? null,
+    };
+
+    const res = await apiFetch<{ objective: Objective }>("/objectives", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    if (res.objective) {
+      setObjectives((prev) => [res.objective, ...prev]);
+    }
+  };
+
+  const updateObjective = useCallback(
+    (id: string, updates: Partial<Objective>) => {
+      const payload: Record<string, unknown> = {};
+      if (updates.title !== undefined) payload.title = updates.title;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.department?.id !== undefined) payload.department_id = updates.department.id;
+      if (updates.owner?.id !== undefined) payload.owner_id = updates.owner.id;
+      if (updates.quarter !== undefined) payload.quarter = updates.quarter;
+      if (updates.quarterId !== undefined) payload.quarter_id = updates.quarterId;
+      if (updates.remi !== undefined) payload.remi_id = updates.remi?.id ?? null;
+      if (updates.calculationMode !== undefined) payload.calculation_mode = updates.calculationMode;
+      if (updates.manualProgress !== undefined) payload.manual_progress = updates.manualProgress;
+      if (updates.manualStatus !== undefined) payload.manual_status = updates.manualStatus;
+
+      return apiFetch<{ objective: Objective }>(`/objectives/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }).then(async () => {
+        await refreshObjectives();
+      });
+    },
+    [refreshObjectives]
+  );
+
+  const deleteObjective = async (id: string) => {
+    await apiFetch(`/objectives/${id}`, { method: "DELETE" });
+    setObjectives((prev) => prev.filter((o) => o.id !== id));
+  };
+
+  const addKeyResult = async (objectiveId: string, kr: KeyResult) => {
+    const payload = {
+      title: kr.title,
+      description: kr.description,
+      owner_id: kr.owner.id,
+      target: kr.target,
+      current_value: kr.currentValue,
+      start_value: kr.startValue,
+      unit: kr.unit,
+      status: kr.status,
+      sums_to_objective: kr.sumsToObjective,
+      blockers: kr.blockers,
+      comments: kr.comments,
+    };
+
+    const res = await apiFetch<{ keyResult: KeyResult; objective: Objective }>(`/objectives/${objectiveId}/key-results`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    if (res.objective) {
+      setObjectives((prev) => prev.map((o) => (o.id === objectiveId ? res.objective : o)));
+    } else if (res.keyResult) {
+      setObjectives((prev) =>
+        prev.map((o) =>
+          o.id === objectiveId ? { ...o, keyResults: [...o.keyResults, res.keyResult] } : o
+        )
+      );
+    }
+  };
+
+  const updateKeyResult = async (objectiveId: string, krId: string, updates: Partial<KeyResult>) => {
+    const payload: Record<string, unknown> = {};
+    if (updates.title !== undefined) payload.title = updates.title;
+    if (updates.description !== undefined) payload.description = updates.description;
+    if (updates.owner?.id !== undefined) payload.owner_id = updates.owner.id;
+    if (updates.target !== undefined) payload.target = updates.target;
+    if (updates.currentValue !== undefined) payload.current_value = updates.currentValue;
+    if (updates.startValue !== undefined) payload.start_value = updates.startValue;
+    if (updates.unit !== undefined) payload.unit = updates.unit;
+    if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.sumsToObjective !== undefined) payload.sums_to_objective = updates.sumsToObjective;
+    if (updates.blockers !== undefined) payload.blockers = updates.blockers;
+    if (updates.comments !== undefined) payload.comments = updates.comments;
+
+    const res = await apiFetch<{ keyResult: KeyResult; objective: Objective }>(`/objectives/${objectiveId}/key-results/${krId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+
+    if (res.objective) {
+      setObjectives((prev) => prev.map((o) => (o.id === objectiveId ? res.objective : o)));
+    } else if (res.keyResult) {
+      setObjectives((prev) =>
+        prev.map((o) =>
+          o.id === objectiveId
+            ? {
+                ...o,
+                keyResults: o.keyResults.map((kr) => (kr.id === krId ? res.keyResult : kr)),
+              }
+            : o
+        )
+      );
+    }
+  };
+
+  const deleteKeyResult = async (objectiveId: string, krId: string) => {
+    await apiFetch(`/objectives/${objectiveId}/key-results/${krId}`, { method: "DELETE" });
+    setObjectives((prev) =>
+      prev.map((o) =>
+        o.id === objectiveId
+          ? { ...o, keyResults: o.keyResults.filter((kr) => kr.id !== krId) }
+          : o
+      )
+    );
+  };
+
+  const memo_value = useMemo(
+    () => ({
+      objectives,
+      remis,
+      users,
+      departments,
+      quarters,
+      selected_quarter,
+      set_selected_quarter,
+      is_loading,
+      refreshObjectives,
+      refreshRemis,
+      refreshUsers,
+      refreshDepartments,
+      refreshQuarters,
+      refreshData,
+      addObjective,
+      updateObjective,
+      deleteObjective,
+      addKeyResult,
+      updateKeyResult,
+      deleteKeyResult,
+    }),
+    [
+      objectives,
+      remis,
+      users,
+      departments,
+      quarters,
+      selected_quarter,
+      is_loading,
+      refreshObjectives,
+      refreshRemis,
+      refreshUsers,
+      refreshDepartments,
+      refreshQuarters,
+      refreshData,
+      addObjective,
+      updateObjective,
+      deleteObjective,
+      addKeyResult,
+      updateKeyResult,
+      deleteKeyResult,
+    ]
+  );
+
+  return (
+    <DataContext.Provider value={memo_value}>
+      {children}
+    </DataContext.Provider>
+  );
+}
+
+export function useData() {
+  const ctx = useContext(DataContext);
+  if (!ctx) throw new Error("useData must be used within DataProvider");
+  return ctx;
+}
