@@ -24,6 +24,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -43,6 +51,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Plus,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,33 +60,30 @@ function REMICard({
   remi,
   associatedObjectives,
   index,
+  progress,
+  onEdit,
 }: {
   remi: REMI;
   associatedObjectives: Objective[];
   index: number;
+  progress: number;
+  onEdit: (remi: REMI) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Calculate aggregated stats
   const stats = useMemo(() => {
     const total = associatedObjectives.length;
-    let totalProgress = 0;
     let completedCount = 0;
     let atRiskCount = 0;
 
     associatedObjectives.forEach((obj) => {
       const calculated = calculateObjectiveProgress(obj);
-      totalProgress += calculated.progress;
       if (calculated.status === "completado") completedCount++;
       if (calculated.status === "en-riesgo") atRiskCount++;
     });
 
-    return {
-      total,
-      avgProgress: total > 0 ? Math.round(totalProgress / total) : 0,
-      completed: completedCount,
-      atRisk: atRiskCount,
-    };
+    return { total, completed: completedCount, atRisk: atRiskCount };
   }, [associatedObjectives]);
 
   return (
@@ -92,8 +98,8 @@ function REMICard({
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4 flex-1">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 flex-shrink-0">
                 <Flag className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
@@ -105,17 +111,38 @@ function REMICard({
                 </p>
               </div>
             </div>
-            <motion.div
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
+
+            {/* Progress badge + Edit button */}
+            <div
+              className="flex items-center gap-2 flex-shrink-0"
+              onClick={(e) => e.stopPropagation()}
             >
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-            </motion.div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1 text-sm font-medium text-foreground">
+                <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                {progress > 0 ? `${progress}%` : "—"}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => onEdit(remi)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </Button>
+              <motion.div
+                animate={{ rotate: isExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+              >
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              </motion.div>
+            </div>
           </div>
         </CardHeader>
 
         <CardContent className="pt-0">
-          {/* Meta Info */}
+          {/* Meta Info — solo Responsable y Departamento */}
           <div className="flex flex-wrap items-center gap-6 py-4 border-b border-border">
             <div className="flex items-center gap-2">
               {remi.responsibleUser ? (
@@ -175,26 +202,6 @@ function REMICard({
                   </div>
                 </>
               )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Objetivos</p>
-                <p className="text-sm font-medium text-foreground">
-                  {stats.total}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Progreso Prom.</p>
-                <p className="text-sm font-medium text-foreground">
-                  {stats.avgProgress}%
-                </p>
-              </div>
             </div>
           </div>
 
@@ -315,31 +322,42 @@ export default function REMIsPage() {
     is_loading,
   } = useData();
   const [selectedQuarter, setSelectedQuarter] = useState<Quarter>(selected_quarter as Quarter);
+
+  // ── Create REMI state ──────────────────────────────────────────────────────
   const [is_create_modal_open, set_is_create_modal_open] = useState(false);
   const [new_remi_name, set_new_remi_name] = useState("");
   const [new_remi_description, set_new_remi_description] = useState("");
   const [new_responsible_user_id, set_new_responsible_user_id] = useState("none");
   const [new_responsible_department_id, set_new_responsible_department_id] = useState("none");
+  const [new_remi_progress, set_new_remi_progress] = useState(0);
   const [is_saving_remi, set_is_saving_remi] = useState(false);
+
+  // ── Edit REMI state ────────────────────────────────────────────────────────
+  const [editing_remi, set_editing_remi] = useState<REMI | null>(null);
+  const [is_edit_sheet_open, set_is_edit_sheet_open] = useState(false);
+  const [edit_name, set_edit_name] = useState("");
+  const [edit_description, set_edit_description] = useState("");
+  const [edit_responsible_user_id, set_edit_responsible_user_id] = useState("none");
+  const [edit_responsible_department_id, set_edit_responsible_department_id] = useState("none");
+  const [edit_progress, set_edit_progress] = useState(0);
+  const [is_saving_edit, set_is_saving_edit] = useState(false);
+
+  // ── Local progress map (REMI id → progress) ───────────────────────────────
+  const [remi_progress_map, set_remi_progress_map] = useState<Record<string, number>>({});
 
   useEffect(() => {
     void Promise.all([refreshObjectives(), refreshRemis()]);
   }, [refreshObjectives, refreshRemis]);
 
   useEffect(() => {
-    if (!is_create_modal_open) return;
-    if (users.length === 0) {
-      void refreshUsers();
-    }
-    if (departments.length === 0) {
-      void refreshDepartments();
-    }
-  }, [is_create_modal_open, users.length, departments.length, refreshUsers, refreshDepartments]);
+    if (!is_create_modal_open && !is_edit_sheet_open) return;
+    if (users.length === 0) void refreshUsers();
+    if (departments.length === 0) void refreshDepartments();
+  }, [is_create_modal_open, is_edit_sheet_open, users.length, departments.length, refreshUsers, refreshDepartments]);
 
-  // Get objectives grouped by REMI
+  // ── Objectives grouped by REMI ─────────────────────────────────────────────
   const remiObjectivesMap = useMemo(() => {
     const map = new Map<string, Objective[]>();
-    
     objectives.forEach((obj) => {
       if (obj.remi && obj.quarter === selectedQuarter) {
         const existing = map.get(obj.remi.id) || [];
@@ -347,57 +365,21 @@ export default function REMIsPage() {
         map.set(obj.remi.id, existing);
       }
     });
-
     return map;
   }, [selectedQuarter, objectives]);
 
-  // Calculate overall stats
-  const overallStats = useMemo(() => {
-    let totalObjectives = 0;
-    let totalProgress = 0;
-    let completedCount = 0;
-    let atRiskCount = 0;
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
-    remis.forEach((remi) => {
-      const objs = remiObjectivesMap.get(remi.id) || [];
-      totalObjectives += objs.length;
-      
-      objs.forEach((obj) => {
-        const calculated = calculateObjectiveProgress(obj);
-        totalProgress += calculated.progress;
-        if (calculated.status === "completado") completedCount++;
-        if (calculated.status === "en-riesgo") atRiskCount++;
-      });
-    });
-
-    return {
-      totalREMIs: remis.length,
-      totalObjectives,
-      avgProgress: totalObjectives > 0 ? Math.round(totalProgress / totalObjectives) : 0,
-      completed: completedCount,
-      atRisk: atRiskCount,
-    };
-  }, [remiObjectivesMap, remis]);
-
-  /**
-   * Crea un REMI nuevo usando endpoint real del API.
-   */
   const handle_create_remi = () => {
     if (!new_remi_name.trim()) return;
-
     set_is_saving_remi(true);
-
     apiFetch("/remis", {
       method: "POST",
       body: JSON.stringify({
         name: new_remi_name.trim(),
         description: new_remi_description.trim() || null,
-        responsible_user_id:
-          new_responsible_user_id !== "none" ? new_responsible_user_id : null,
-        responsible_department_id:
-          new_responsible_department_id !== "none"
-            ? new_responsible_department_id
-            : null,
+        responsible_user_id: new_responsible_user_id !== "none" ? new_responsible_user_id : null,
+        responsible_department_id: new_responsible_department_id !== "none" ? new_responsible_department_id : null,
       }),
     })
       .then(() => {
@@ -406,11 +388,40 @@ export default function REMIsPage() {
         set_new_remi_description("");
         set_new_responsible_user_id("none");
         set_new_responsible_department_id("none");
+        set_new_remi_progress(0);
         return refreshRemis();
       })
-      .finally(() => {
-        set_is_saving_remi(false);
-      });
+      .finally(() => set_is_saving_remi(false));
+  };
+
+  const handle_open_edit = (remi: REMI) => {
+    set_editing_remi(remi);
+    set_edit_name(remi.name);
+    set_edit_description(remi.description || "");
+    set_edit_responsible_user_id(remi.responsibleUser?.id || "none");
+    set_edit_responsible_department_id(remi.responsibleDepartment?.id || "none");
+    set_edit_progress(remi_progress_map[remi.id] ?? 0);
+    set_is_edit_sheet_open(true);
+  };
+
+  const handle_save_edit = () => {
+    if (!editing_remi || !edit_name.trim()) return;
+    set_is_saving_edit(true);
+    apiFetch(`/remis/${editing_remi.id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        name: edit_name.trim(),
+        description: edit_description.trim() || null,
+        responsible_user_id: edit_responsible_user_id !== "none" ? edit_responsible_user_id : null,
+        responsible_department_id: edit_responsible_department_id !== "none" ? edit_responsible_department_id : null,
+      }),
+    })
+      .then(() => {
+        set_remi_progress_map((prev) => ({ ...prev, [editing_remi.id]: edit_progress }));
+        set_is_edit_sheet_open(false);
+        return refreshRemis();
+      })
+      .finally(() => set_is_saving_edit(false));
   };
 
   return (
@@ -455,11 +466,14 @@ export default function REMIsPage() {
               remi={remi}
               associatedObjectives={remiObjectivesMap.get(remi.id) || []}
               index={index}
+              progress={remi_progress_map[remi.id] ?? 0}
+              onEdit={handle_open_edit}
             />
           ))}
         </div>
       </div>
 
+      {/* ── Crear REMI dialog ──────────────────────────────────────────────── */}
       <Dialog open={is_create_modal_open} onOpenChange={set_is_create_modal_open}>
         <DialogContent>
           <DialogHeader>
@@ -489,41 +503,42 @@ export default function REMIsPage() {
             </div>
             <div className="space-y-2">
               <Label>Responsable</Label>
-              <Select
-                value={new_responsible_user_id}
-                onValueChange={set_new_responsible_user_id}
-              >
+              <Select value={new_responsible_user_id} onValueChange={set_new_responsible_user_id}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona usuario" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin responsable</SelectItem>
                   {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
+                    <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Departamento responsable</Label>
-              <Select
-                value={new_responsible_department_id}
-                onValueChange={set_new_responsible_department_id}
-              >
+              <Select value={new_responsible_department_id} onValueChange={set_new_responsible_department_id}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona departamento" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin departamento</SelectItem>
                   {departments.map((department) => (
-                    <SelectItem key={department.id} value={department.id}>
-                      {department.name}
-                    </SelectItem>
+                    <SelectItem key={department.id} value={department.id}>{department.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_remi_progress">Progreso (%)</Label>
+              <Input
+                id="new_remi_progress"
+                type="number"
+                min={0}
+                max={100}
+                value={new_remi_progress}
+                onChange={(event) => set_new_remi_progress(Number(event.target.value))}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -540,6 +555,90 @@ export default function REMIsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Editar REMI sheet ──────────────────────────────────────────────── */}
+      <Sheet open={is_edit_sheet_open} onOpenChange={set_is_edit_sheet_open}>
+        <SheetContent side="right" className="w-[480px] sm:max-w-[480px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Editar REMI</SheetTitle>
+            <SheetDescription>
+              Modificá los atributos del resultado estratégico.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="space-y-4 py-6">
+            <div className="space-y-2">
+              <Label htmlFor="edit_name">Nombre</Label>
+              <Input
+                id="edit_name"
+                value={edit_name}
+                onChange={(e) => set_edit_name(e.target.value)}
+                placeholder="Nombre del REMI"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_description">Descripción</Label>
+              <Textarea
+                id="edit_description"
+                value={edit_description}
+                onChange={(e) => set_edit_description(e.target.value)}
+                placeholder="Detalle estratégico del REMI"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Responsable</Label>
+              <Select value={edit_responsible_user_id} onValueChange={set_edit_responsible_user_id}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona usuario" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin responsable</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Departamento responsable</Label>
+              <Select value={edit_responsible_department_id} onValueChange={set_edit_responsible_department_id}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona departamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin departamento</SelectItem>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>{department.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_progress">Progreso (%)</Label>
+              <Input
+                id="edit_progress"
+                type="number"
+                min={0}
+                max={100}
+                value={edit_progress}
+                onChange={(e) => set_edit_progress(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          <SheetFooter className="gap-2">
+            <Button variant="outline" onClick={() => set_is_edit_sheet_open(false)} disabled={is_saving_edit}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handle_save_edit}
+              disabled={is_saving_edit || !edit_name.trim()}
+            >
+              {is_saving_edit ? <Spinner className="mr-2 h-4 w-4" /> : null}
+              {is_saving_edit ? "Guardando..." : "Guardar"}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </AppShell>
   );
 }
