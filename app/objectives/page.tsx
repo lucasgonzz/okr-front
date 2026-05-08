@@ -504,33 +504,6 @@ function ObjectivesContent() {
           </motion.div>
         </div>
 
-        {/* Summary Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.05 }}
-          className="mb-6 grid grid-cols-4 gap-4"
-        >
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground mb-1">Total Objetivos</p>
-            <p className="text-2xl font-semibold text-foreground">{summaryStats.total}</p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground mb-1">Key Results</p>
-            <p className="text-2xl font-semibold text-foreground">{summaryStats.totalKRs}</p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground mb-1">Progreso Prom.</p>
-            <p className={cn("text-2xl font-semibold", getProgressTextColor(summaryStats.avgProgress))}>
-              {summaryStats.avgProgress}%
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground mb-1">En Riesgo</p>
-            <p className="text-2xl font-semibold text-destructive">{summaryStats.atRisk}</p>
-          </div>
-        </motion.div>
-
         {/* Filters */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}

@@ -51,6 +51,9 @@ export function KeyResultForm({
   const [currentValue, setCurrentValue] = useState(0);
   const [target, setTarget] = useState(100);
   const [unit, setUnit] = useState("%");
+  const [unitSelect, setUnitSelect] = useState("%");
+
+  const UNIT_OPTIONS = ["$", "USD", "Uni", "%", "Otros"];
   const [status, setStatus] = useState<KeyResultStatus>("");
   const [sumsToObjective, setSumsToObjective] = useState(true);
   const [blockers, setBlockers] = useState("");
@@ -75,7 +78,9 @@ export function KeyResultForm({
         setStartValue(keyResult.startValue);
         setCurrentValue(keyResult.currentValue);
         setTarget(keyResult.target);
-        setUnit(keyResult.unit ?? "%");
+        const loadedUnit = keyResult.unit ?? "%";
+        setUnit(loadedUnit);
+        setUnitSelect(UNIT_OPTIONS.includes(loadedUnit) ? loadedUnit : "Otros");
         setStatus(keyResult.status ?? "");
         setSumsToObjective(keyResult.sumsToObjective);
         setBlockers(keyResult.blockers ?? "");
@@ -89,6 +94,7 @@ export function KeyResultForm({
         setCurrentValue(0);
         setTarget(100);
         setUnit("%");
+        setUnitSelect("%");
         setStatus("");
         setSumsToObjective(true);
         setBlockers("");
@@ -257,13 +263,30 @@ export function KeyResultForm({
 
           {/* Unidad */}
           <div className="space-y-2">
-            <Label htmlFor="unit">Unidad</Label>
-            <Input
-              id="unit"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              placeholder="%, contratos, $, usuarios..."
-            />
+            <Label>Unidad</Label>
+            <Select
+              value={unitSelect}
+              onValueChange={(value) => {
+                setUnitSelect(value);
+                if (value === "Otros") setUnit(""); else setUnit(value);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccioná una unidad" />
+              </SelectTrigger>
+              <SelectContent>
+                {UNIT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {unitSelect === "Otros" && (
+              <Input
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                placeholder="Escribí la unidad personalizada..."
+              />
+            )}
           </div>
 
           {/* Estado */}

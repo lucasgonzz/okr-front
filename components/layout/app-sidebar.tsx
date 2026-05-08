@@ -9,7 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import {
-  LayoutDashboard,
   Building2,
   Target,
   ClipboardList,
@@ -20,9 +19,8 @@ import {
 
 /** Enlaces comunes a todas las cuentas con acceso al área OKR (no incluye Admin). */
 const base_navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Departamentos", href: "/departments", icon: Building2 },
   { name: "REMIs", href: "/remis", icon: Flag },
+  { name: "Departamentos", href: "/departments", icon: Building2 },
   { name: "Objetivos", href: "/objectives", icon: Target },
   { name: "Logs", href: "/updates", icon: ClipboardList },
 ];
@@ -76,8 +74,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto p-4">
         {visible_navigation.map((item) => {
-          const isActive = pathname === item.href || 
-            (item.href !== "/" && pathname.startsWith(item.href));
+          const isActive = pathname === item.href || pathname.startsWith(item.href);
           return (
             <Link key={item.name} href={item.href}>
               <motion.div
@@ -136,7 +133,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           className="w-full justify-start text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10"
         >
           <LogOut className="h-4 w-4 mr-2" />
-          Sign out
+          Cerrar sesión
         </Button>
       </div>
     </aside>

@@ -121,10 +121,10 @@ export default function DepartmentsPage() {
             transition={{ duration: 0.4 }}
           >
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Departments
+              Departamentos
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              View OKR progress across all departments for {selectedQuarter}
+              Progreso de OKRs en todos los departamentos para {selectedQuarter}
             </p>
           </motion.div>
           <Button onClick={() => set_is_create_modal_open(true)}>
@@ -181,7 +181,7 @@ export default function DepartmentsPage() {
                   {/* Progress */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                      <span>Average Progress</span>
+                      <span>Progreso Promedio</span>
                       <span className="font-medium text-foreground">
                         {dept.averageProgress}%
                       </span>
@@ -202,7 +202,7 @@ export default function DepartmentsPage() {
                           {dept.objectiveCount}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Objectives
+                          Objetivos
                         </p>
                       </div>
                     </div>
@@ -212,7 +212,7 @@ export default function DepartmentsPage() {
                         <p className="text-sm font-medium text-foreground">
                           {dept.atRiskCount}
                         </p>
-                        <p className="text-xs text-muted-foreground">At Risk</p>
+                        <p className="text-xs text-muted-foreground">En Riesgo</p>
                       </div>
                     </div>
                   </div>

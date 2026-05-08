@@ -256,7 +256,7 @@ export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormP
 
           {/* Quarter */}
           <div className="space-y-2">
-            <Label>Quarter</Label>
+            <Label>Trimestre</Label>
             <Select value={quarter} onValueChange={(v) => setQuarter(v as Quarter)}>
               <SelectTrigger>
                 <SelectValue />

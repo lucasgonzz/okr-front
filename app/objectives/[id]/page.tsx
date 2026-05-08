@@ -525,7 +525,7 @@ export default function ObjectiveDetailPage({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-warning" />
-                    Bloqueadores ({blockedKeyResults.length})
+                    Key Results en Riesgo ({blockedKeyResults.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

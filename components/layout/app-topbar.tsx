@@ -75,7 +75,7 @@ export function AppTopbar({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search objectives, departments, or team members..."
+            placeholder="Buscar objetivos, departamentos o miembros..."
             className="pl-9 bg-secondary/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
           />
           <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
@@ -105,10 +105,10 @@ export function AppTopbar({
           <PopoverContent className="w-80 p-0" align="end">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h4 className="text-sm font-semibold text-foreground">
-                Notifications
+                Notificaciones
               </h4>
               <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
-                Mark all read
+                Marcar todo como leído
               </Button>
             </div>
             <ScrollArea className="max-h-[300px]">
@@ -156,7 +156,7 @@ export function AppTopbar({
             </ScrollArea>
             <div className="border-t border-border p-2">
               <Button variant="ghost" className="w-full text-sm">
-                View all notifications
+                Ver todas las notificaciones
               </Button>
             </div>
           </PopoverContent>

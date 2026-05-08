@@ -40,7 +40,7 @@ export default function LoginPage() {
         router.replace("/");
       }
     } else {
-      setError(result.error || "Login failed");
+      setError(result.error || "Error al iniciar sesión");
       setIsLoading(false);
     }
   };
@@ -88,7 +88,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-semibold text-foreground">OKR Platform</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Enterprise Objectives & Key Results
+            Gestión de Objetivos y Resultados Clave
           </p>
         </motion.div>
 
@@ -100,9 +100,9 @@ export default function LoginPage() {
           className="rounded-2xl border border-border bg-card p-8 shadow-xl shadow-black/5"
         >
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-foreground">Welcome back</h2>
+            <h2 className="text-lg font-semibold text-foreground">Bienvenido</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Sign in to access your dashboard
+              Iniciá sesión para acceder a tu panel
             </p>
           </div>
 
@@ -130,14 +130,14 @@ export default function LoginPage() {
             {/* Password Field */}
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium text-foreground">
-                Password
+                Contraseña
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="Ingresá tu contraseña"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 h-11 bg-background border-border"
@@ -168,10 +168,10 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  Iniciando sesión...
                 </>
               ) : (
-                "Sign in"
+                "Iniciar sesión"
               )}
             </Button>
           </form>
@@ -179,7 +179,7 @@ export default function LoginPage() {
           {/* Demo Credentials */}
           <div className="mt-6 pt-6 border-t border-border">
             <p className="text-xs text-muted-foreground text-center mb-3">
-              Demo credentials
+              Credenciales de demo
             </p>
             <div className="rounded-lg bg-secondary/50 p-3 text-xs text-muted-foreground font-mono space-y-2">
               <p className="text-foreground font-semibold">Super Admin</p>
@@ -211,7 +211,7 @@ export default function LoginPage() {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="text-center text-xs text-muted-foreground mt-6"
         >
-          Secure enterprise authentication
+          Autenticación segura para empresas
         </motion.p>
       </motion.div>
     </div>

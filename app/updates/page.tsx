@@ -341,9 +341,9 @@ export default function LogsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
-                <SelectItem value="creation">Creacion</SelectItem>
-                <SelectItem value="update">Actualizacion</SelectItem>
-                <SelectItem value="deletion">Eliminacion</SelectItem>
+                <SelectItem value="creation">Creación</SelectItem>
+                <SelectItem value="update">Actualización</SelectItem>
+                <SelectItem value="deletion">Eliminación</SelectItem>
             </SelectContent>
           </Select>
 

@@ -176,7 +176,7 @@ export default function AdminPage() {
               Admin
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Manage users, departments, and organizational structure
+              Gestioná usuarios, departamentos y la estructura organizacional
             </p>
           </motion.div>
         </div>
@@ -198,7 +198,7 @@ export default function AdminPage() {
                     <p className="text-2xl font-semibold text-foreground">
                       {totalUsers}
                     </p>
-                    <p className="text-sm text-muted-foreground">Total Users</p>
+                    <p className="text-sm text-muted-foreground">Total Usuarios</p>
                   </div>
                 </div>
               </CardContent>
@@ -220,7 +220,7 @@ export default function AdminPage() {
                     <p className="text-2xl font-semibold text-foreground">
                       {adminCount}
                     </p>
-                    <p className="text-sm text-muted-foreground">Admins</p>
+                    <p className="text-sm text-muted-foreground">Administradores</p>
                   </div>
                 </div>
               </CardContent>
@@ -242,7 +242,7 @@ export default function AdminPage() {
                     <p className="text-2xl font-semibold text-foreground">
                       {userCount}
                     </p>
-                    <p className="text-sm text-muted-foreground">Users</p>
+                    <p className="text-sm text-muted-foreground">Usuarios</p>
                   </div>
                 </div>
               </CardContent>
@@ -264,7 +264,7 @@ export default function AdminPage() {
                     <p className="text-2xl font-semibold text-foreground">
                       {departments.length}
                     </p>
-                    <p className="text-sm text-muted-foreground">Departments</p>
+                    <p className="text-sm text-muted-foreground">Departamentos</p>
                   </div>
                 </div>
               </CardContent>
@@ -284,7 +284,7 @@ export default function AdminPage() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-primary" />
-                  Users
+                  Usuarios
                 </CardTitle>
                 <Sheet
                   open={isCreateUserOpen}
@@ -295,7 +295,7 @@ export default function AdminPage() {
                 >
                   <Button size="sm" className="gap-2" onClick={() => setIsCreateUserOpen(true)}>
                     <Plus className="h-4 w-4" />
-                    Create User
+                    Crear Usuario
                   </Button>
                   <SheetContent side="right" className="sm:max-w-md">
                     <SheetHeader>
@@ -343,19 +343,6 @@ export default function AdminPage() {
                               <SelectItem value="user">User</SelectItem>
                             </SelectContent>
                           </Select>
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label htmlFor="avatar">Avatar (URL)</Label>
-                          <Input
-                            id="avatar"
-                            type="url"
-                            placeholder="https://..."
-                            value={newUserForm.avatar}
-                            onChange={(e) =>
-                              setNewUserForm((prev) => ({ ...prev, avatar: e.target.value }))
-                            }
-                          />
                         </div>
 
                         <div className="grid gap-2">
@@ -412,7 +399,7 @@ export default function AdminPage() {
                 <div className="relative mb-4">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Search users..."
+                    placeholder="Buscar usuarios..."
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
                     className="pl-9 bg-background"
@@ -483,7 +470,7 @@ export default function AdminPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-sm">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    Departments
+                    Departamentos
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -525,18 +512,18 @@ export default function AdminPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary" />
-                Department Details
+                Detalles de Departamentos
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Table className="min-w-[760px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Head</TableHead>
-                    <TableHead className="text-center">Members</TableHead>
-                    <TableHead className="text-center">Objectives</TableHead>
-                    <TableHead className="text-center">Avg Progress</TableHead>
+                    <TableHead>Departamento</TableHead>
+                    <TableHead>Responsable</TableHead>
+                    <TableHead className="text-center">Miembros</TableHead>
+                    <TableHead className="text-center">Objetivos</TableHead>
+                    <TableHead className="text-center">Progreso Prom.</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
