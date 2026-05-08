@@ -47,13 +47,88 @@ import {
   Building2,
   User,
   ExternalLink,
-  TrendingUp,
   AlertTriangle,
   CheckCircle2,
   Plus,
   Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Circular progress ring shown in each REMI card header
+function ProgressRing({ progress }: { progress: number }) {
+  const r = 24;
+  const size = 64;
+  const cx = size / 2;
+  const strokeWidth = 5;
+  const circumference = 2 * Math.PI * r;
+  const safeProgress = Math.min(100, Math.max(0, progress));
+  const offset = circumference * (1 - safeProgress / 100);
+
+  const strokeColor =
+    safeProgress >= 70 ? "#22c55e" :
+    safeProgress >= 30 ? "#f59e0b" :
+    safeProgress === 0 ? undefined :
+    "#ef4444";
+
+  const textColor =
+    safeProgress >= 70 ? "text-emerald-500" :
+    safeProgress >= 30 ? "text-amber-500" :
+    safeProgress === 0 ? "text-muted-foreground" :
+    "text-red-500";
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg
+          width={size}
+          height={size}
+          style={{ transform: "rotate(-90deg)" }}
+          className="block"
+        >
+          {/* Track ring */}
+          <circle
+            cx={cx}
+            cy={cx}
+            r={r}
+            fill="none"
+            strokeWidth={strokeWidth}
+            className="stroke-border"
+          />
+          {/* Progress arc */}
+          {safeProgress > 0 && (
+            <circle
+              cx={cx}
+              cy={cx}
+              r={r}
+              fill="none"
+              stroke={strokeColor}
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+            />
+          )}
+        </svg>
+        {/* Center label */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0">
+          {safeProgress > 0 ? (
+            <>
+              <span className={cn("text-base font-bold leading-none", textColor)}>
+                {safeProgress}
+              </span>
+              <span className={cn("text-[10px] font-bold leading-none", textColor)}>%</span>
+            </>
+          ) : (
+            <span className="text-sm font-bold leading-none text-muted-foreground">—</span>
+          )}
+        </div>
+      </div>
+      <span className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
+        Progreso
+      </span>
+    </div>
+  );
+}
 
 // REMI Card with expandable objectives
 function REMICard({
@@ -112,15 +187,12 @@ function REMICard({
               </div>
             </div>
 
-            {/* Progress badge + Edit button */}
+            {/* Progress ring + Edit button */}
             <div
-              className="flex items-center gap-2 flex-shrink-0"
+              className="flex items-center gap-3 flex-shrink-0"
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1 text-sm font-medium text-foreground">
-                <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-                {progress > 0 ? `${progress}%` : "—"}
-              </span>
+              <ProgressRing progress={progress} />
               <Button
                 variant="outline"
                 size="sm"
