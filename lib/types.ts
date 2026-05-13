@@ -44,6 +44,7 @@ export interface REMI {
   description: string;
   responsibleUser: User | null;
   responsibleDepartment: Department | null;
+  progresoManual?: number;
 }
 
 export interface KeyResult {

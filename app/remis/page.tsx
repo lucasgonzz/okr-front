@@ -54,6 +54,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+function clamp_remi_progreso_manual(value: number): number {
+  const n = Number.isFinite(value) ? Math.round(value) : 0;
+  return Math.min(100, Math.max(0, n));
+}
+
 // Circular progress ring shown in each REMI card header
 function ProgressRing({ progress }: { progress: number }) {
   const r = 24;
@@ -414,9 +419,6 @@ export default function REMIsPage() {
   const [edit_progress, set_edit_progress] = useState(0);
   const [is_saving_edit, set_is_saving_edit] = useState(false);
 
-  // ── Local progress map (REMI id → progress) ───────────────────────────────
-  const [remi_progress_map, set_remi_progress_map] = useState<Record<string, number>>({});
-
   useEffect(() => {
     void Promise.all([refreshObjectives(), refreshRemis()]);
   }, [refreshObjectives, refreshRemis]);
@@ -452,6 +454,7 @@ export default function REMIsPage() {
         description: new_remi_description.trim() || null,
         responsible_user_id: new_responsible_user_id !== "none" ? new_responsible_user_id : null,
         responsible_department_id: new_responsible_department_id !== "none" ? new_responsible_department_id : null,
+        progreso_manual: clamp_remi_progreso_manual(new_remi_progress),
       }),
     })
       .then(() => {
@@ -472,7 +475,7 @@ export default function REMIsPage() {
     set_edit_description(remi.description || "");
     set_edit_responsible_user_id(remi.responsibleUser?.id || "none");
     set_edit_responsible_department_id(remi.responsibleDepartment?.id || "none");
-    set_edit_progress(remi_progress_map[remi.id] ?? 0);
+    set_edit_progress(remi.progresoManual ?? 0);
     set_is_edit_sheet_open(true);
   };
 
@@ -486,10 +489,10 @@ export default function REMIsPage() {
         description: edit_description.trim() || null,
         responsible_user_id: edit_responsible_user_id !== "none" ? edit_responsible_user_id : null,
         responsible_department_id: edit_responsible_department_id !== "none" ? edit_responsible_department_id : null,
+        progreso_manual: clamp_remi_progreso_manual(edit_progress),
       }),
     })
       .then(() => {
-        set_remi_progress_map((prev) => ({ ...prev, [editing_remi.id]: edit_progress }));
         set_is_edit_sheet_open(false);
         return refreshRemis();
       })
@@ -538,7 +541,7 @@ export default function REMIsPage() {
               remi={remi}
               associatedObjectives={remiObjectivesMap.get(remi.id) || []}
               index={index}
-              progress={remi_progress_map[remi.id] ?? 0}
+              progress={remi.progresoManual ?? 0}
               onEdit={handle_open_edit}
             />
           ))}
@@ -630,8 +633,11 @@ export default function REMIsPage() {
 
       {/* ── Editar REMI sheet ──────────────────────────────────────────────── */}
       <Sheet open={is_edit_sheet_open} onOpenChange={set_is_edit_sheet_open}>
-        <SheetContent side="right" className="w-[480px] sm:max-w-[480px] overflow-y-auto">
-          <SheetHeader>
+        <SheetContent
+          side="right"
+          className="flex h-full w-[480px] sm:max-w-[480px] flex-col overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-14"
+        >
+          <SheetHeader className="p-0">
             <SheetTitle>Editar REMI</SheetTitle>
             <SheetDescription>
               Modificá los atributos del resultado estratégico.
@@ -697,7 +703,7 @@ export default function REMIsPage() {
               />
             </div>
           </div>
-          <SheetFooter className="gap-2">
+          <SheetFooter className="mt-auto gap-2 p-0 pt-6">
             <Button variant="outline" onClick={() => set_is_edit_sheet_open(false)} disabled={is_saving_edit}>
               Cancelar
             </Button>

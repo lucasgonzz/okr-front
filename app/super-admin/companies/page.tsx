@@ -58,9 +58,18 @@ interface CreateFormData {
   admin_password: string;
 }
 
+interface CompanyAdminUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 interface EditFormData {
   name: string;
   active: boolean;
+  admin_name: string;
+  admin_email: string;
+  admin_password: string;
 }
 
 const emptyCreate: CreateFormData = {
@@ -85,7 +94,14 @@ export default function CompaniesPage() {
 
   // Edit dialog
   const [editTarget, setEditTarget] = useState<Company | null>(null);
-  const [editForm, setEditForm] = useState<EditFormData>({ name: "", active: true });
+  const [editForm, setEditForm] = useState<EditFormData>({
+    name: "",
+    active: true,
+    admin_name: "",
+    admin_email: "",
+    admin_password: "",
+  });
+  const [editDetailLoading, setEditDetailLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -142,8 +158,37 @@ export default function CompaniesPage() {
 
   const openEdit = (company: Company) => {
     setEditTarget(company);
-    setEditForm({ name: company.name, active: company.active });
+    setEditForm({
+      name: company.name,
+      active: company.active,
+      admin_name: "",
+      admin_email: "",
+      admin_password: "",
+    });
     setEditError(null);
+    setEditDetailLoading(true);
+    void (async () => {
+      try {
+        const res = await apiFetch<{
+          company: Company;
+          admins: CompanyAdminUser[];
+        }>(`/admin/companies/${company.id}`);
+        const primary = res.admins?.[0];
+        setEditForm({
+          name: res.company.name,
+          active: res.company.active,
+          admin_name: primary?.name ?? "",
+          admin_email: primary?.email ?? "",
+          admin_password: "",
+        });
+      } catch (err) {
+        setEditError(
+          err instanceof Error ? err.message : "Error al cargar la empresa"
+        );
+      } finally {
+        setEditDetailLoading(false);
+      }
+    })();
   };
 
   const handleEdit = async () => {
@@ -155,7 +200,13 @@ export default function CompaniesPage() {
         `/admin/companies/${editTarget.id}`,
         {
           method: "PUT",
-          body: JSON.stringify(editForm),
+          body: JSON.stringify({
+            name: editForm.name,
+            active: editForm.active,
+            admin_name: editForm.admin_name,
+            admin_email: editForm.admin_email,
+            admin_password: editForm.admin_password || undefined,
+          }),
         }
       );
       setCompanies((prev) =>
@@ -445,46 +496,120 @@ export default function CompaniesPage() {
 
       {/* ─── Edit Dialog ────────────────────────────────────────────────────── */}
       <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar empresa</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">
-                Nombre de la empresa
-              </label>
-              <Input
-                value={editForm.name}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, name: e.target.value }))
-                }
-              />
-            </div>
+            {editDetailLoading ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p className="text-sm">Cargando datos…</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Empresa
+                  </p>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">
+                        Nombre de la empresa
+                      </label>
+                      <Input
+                        value={editForm.name}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, name: e.target.value }))
+                        }
+                      />
+                    </div>
 
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-foreground">
-                Activa
-              </label>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={editForm.active}
-                onClick={() =>
-                  setEditForm((f) => ({ ...f, active: !f.active }))
-                }
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  editForm.active ? "bg-primary" : "bg-muted"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                    editForm.active ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm font-medium text-foreground">
+                        Activa
+                      </label>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={editForm.active}
+                        onClick={() =>
+                          setEditForm((f) => ({ ...f, active: !f.active }))
+                        }
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          editForm.active ? "bg-primary" : "bg-muted"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                            editForm.active ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Administrador de la empresa
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Corresponde al primer admin de la empresa (creado al registrarla).
+                  </p>
+                  <div className="space-y-3 pt-1">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">
+                        Nombre completo
+                      </label>
+                      <Input
+                        placeholder="Nombre del administrador"
+                        value={editForm.admin_name}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            admin_name: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        placeholder="admin@empresa.com"
+                        value={editForm.admin_email}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            admin_email: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">
+                        Nueva contraseña
+                      </label>
+                      <Input
+                        type="password"
+                        placeholder="Dejar en blanco para no cambiar"
+                        value={editForm.admin_password}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            admin_password: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             {editError && (
               <div className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
@@ -504,7 +629,13 @@ export default function CompaniesPage() {
             </Button>
             <Button
               onClick={handleEdit}
-              disabled={editLoading || !editForm.name}
+              disabled={
+                editLoading ||
+                editDetailLoading ||
+                !editForm.name ||
+                !editForm.admin_name ||
+                !editForm.admin_email
+              }
             >
               {editLoading ? (
                 <>

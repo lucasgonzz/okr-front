@@ -34,17 +34,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
-import type { Quarter } from "@/lib/types";
+import type { Quarter, User } from "@/lib/types";
 import {
   Users,
   Building2,
   Shield,
-  User,
+  User as UserIcon,
   Plus,
   Search,
+  Pencil,
   MoreHorizontal,
 } from "lucide-react";
+
+type EditUserForm = {
+  name: string;
+  email: string;
+  departmentId: string;
+  role: "admin" | "user";
+  password: string;
+};
 
 export default function AdminPage() {
   const {
@@ -55,6 +65,7 @@ export default function AdminPage() {
     refreshUsers,
     refreshDepartments,
   } = useData();
+  const { user: authUser } = useAuth();
   const { toast } = useToast();
   const [selectedQuarter, setSelectedQuarter] = useState<Quarter>(selected_quarter as Quarter);
   const [searchValue, setSearchValue] = useState("");
@@ -65,6 +76,18 @@ export default function AdminPage() {
     role: "user" as "admin" | "user",
     avatar: "",
     email: "",
+    password: "",
+  });
+
+  const [editUserTarget, setEditUserTarget] = useState<User | null>(null);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [editUserLoading, setEditUserLoading] = useState(false);
+  const [editUserSaving, setEditUserSaving] = useState(false);
+  const [editUserForm, setEditUserForm] = useState<EditUserForm>({
+    name: "",
+    email: "",
+    departmentId: "",
+    role: "user",
     password: "",
   });
 
@@ -90,9 +113,9 @@ export default function AdminPage() {
   };
 
   // Role icons
-  const roleIcons: Record<string, typeof User> = {
+  const roleIcons: Record<string, typeof UserIcon> = {
     admin: Shield,
-    user: User,
+    user: UserIcon,
   };
 
   // Stats
@@ -155,6 +178,104 @@ export default function AdminPage() {
       setIsCreatingUser(false);
     }
   };
+
+  const closeEditUserSheet = () => {
+    setIsEditUserOpen(false);
+    setEditUserTarget(null);
+    setEditUserForm({
+      name: "",
+      email: "",
+      departmentId: "",
+      role: "user",
+      password: "",
+    });
+  };
+
+  const openEditUser = async (userFromList: User) => {
+    setEditUserTarget(userFromList);
+    setIsEditUserOpen(true);
+    setEditUserLoading(true);
+    setEditUserForm({
+      name: userFromList.name,
+      email: userFromList.email,
+      departmentId: userFromList.departmentId ?? "",
+      role: userFromList.role === "admin" ? "admin" : "user",
+      password: "",
+    });
+    try {
+      const res = await apiFetch<{ user: User }>(`/users/${userFromList.id}`);
+      const u = res.user;
+      setEditUserForm({
+        name: u.name,
+        email: u.email,
+        departmentId: u.departmentId ?? "",
+        role: u.role === "admin" ? "admin" : "user",
+        password: "",
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo cargar el usuario",
+        description: error instanceof Error ? error.message : "Intentá de nuevo.",
+        variant: "destructive",
+      });
+      closeEditUserSheet();
+    } finally {
+      setEditUserLoading(false);
+    }
+  };
+
+  const handleEditUserSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editUserTarget) return;
+
+    if (
+      !editUserForm.name.trim() ||
+      !editUserForm.email.trim() ||
+      !editUserForm.departmentId
+    ) {
+      toast({
+        title: "Campos incompletos",
+        description: "Nombre, correo y departamento son obligatorios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setEditUserSaving(true);
+    const payload: Record<string, string | number> = {
+      name: editUserForm.name.trim(),
+      email: editUserForm.email.trim(),
+      role: editUserForm.role,
+      department_id: Number(editUserForm.departmentId),
+    };
+    if (editUserForm.password.trim().length > 0) {
+      payload.password = editUserForm.password;
+    }
+
+    try {
+      await apiFetch(`/users/${editUserTarget.id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      await refreshUsers();
+      closeEditUserSheet();
+      toast({
+        title: "Usuario actualizado",
+        description: "Los cambios se guardaron correctamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo guardar",
+        description: error instanceof Error ? error.message : "Ocurrió un error inesperado.",
+        variant: "destructive",
+      });
+    } finally {
+      setEditUserSaving(false);
+    }
+  };
+
+  const isEditingSelf =
+    !!authUser?.id && !!editUserTarget?.id && authUser.id === editUserTarget.id;
 
   return (
     <AppShell
@@ -236,7 +357,7 @@ export default function AdminPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-                    <User className="h-6 w-6 text-muted-foreground" />
+                    <UserIcon className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <div>
                     <p className="text-2xl font-semibold text-foreground">
@@ -286,13 +407,14 @@ export default function AdminPage() {
                   <Users className="h-5 w-5 text-primary" />
                   Usuarios
                 </CardTitle>
-                <Sheet
-                  open={isCreateUserOpen}
-                  onOpenChange={(open) => {
-                    setIsCreateUserOpen(open);
-                    if (!open) resetCreateUserForm();
-                  }}
-                >
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <Sheet
+                    open={isCreateUserOpen}
+                    onOpenChange={(open) => {
+                      setIsCreateUserOpen(open);
+                      if (!open) resetCreateUserForm();
+                    }}
+                  >
                   <Button size="sm" className="gap-2" onClick={() => setIsCreateUserOpen(true)}>
                     <Plus className="h-4 w-4" />
                     Crear Usuario
@@ -393,6 +515,129 @@ export default function AdminPage() {
                     </form>
                   </SheetContent>
                 </Sheet>
+
+                <Sheet
+                  open={isEditUserOpen}
+                  onOpenChange={(open) => {
+                    if (!open) closeEditUserSheet();
+                  }}
+                >
+                  <SheetContent side="right" className="sm:max-w-md">
+                    <SheetHeader>
+                      <SheetTitle>Editar usuario</SheetTitle>
+                      <SheetDescription>
+                        Nombre, correo, rol, departamento y contraseña (opcional).
+                      </SheetDescription>
+                    </SheetHeader>
+                    {editUserLoading ? (
+                      <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground text-sm">
+                        Cargando…
+                      </div>
+                    ) : (
+                      <form onSubmit={handleEditUserSubmit} className="flex h-full flex-col">
+                        <div className="grid gap-4 px-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="edit-name">Nombre</Label>
+                            <Input
+                              id="edit-name"
+                              value={editUserForm.name}
+                              onChange={(e) =>
+                                setEditUserForm((p) => ({ ...p, name: e.target.value }))
+                              }
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="edit-email">Correo</Label>
+                            <Input
+                              id="edit-email"
+                              type="email"
+                              value={editUserForm.email}
+                              onChange={(e) =>
+                                setEditUserForm((p) => ({ ...p, email: e.target.value }))
+                              }
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="edit-department">Departamento</Label>
+                            <Select
+                              value={editUserForm.departmentId}
+                              onValueChange={(value) =>
+                                setEditUserForm((p) => ({ ...p, departmentId: value }))
+                              }
+                            >
+                              <SelectTrigger id="edit-department" className="w-full">
+                                <SelectValue placeholder="Seleccioná un departamento" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {departments.map((department) => (
+                                  <SelectItem key={department.id} value={department.id}>
+                                    {department.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="edit-role">Rol</Label>
+                            <Select
+                              value={editUserForm.role}
+                              onValueChange={(value: "admin" | "user") =>
+                                setEditUserForm((p) => ({ ...p, role: value }))
+                              }
+                            >
+                              <SelectTrigger id="edit-role" className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem
+                                  value="user"
+                                  disabled={
+                                    isEditingSelf && editUserTarget?.role === "admin"
+                                  }
+                                >
+                                  User
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {isEditingSelf && editUserTarget?.role === "admin" ? (
+                              <p className="text-xs text-muted-foreground">
+                                No podés quitarte el rol de administrador vos mismo.
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="edit-password">Nueva contraseña</Label>
+                            <Input
+                              id="edit-password"
+                              type="password"
+                              minLength={6}
+                              autoComplete="new-password"
+                              placeholder="Dejar en blanco para no cambiar"
+                              value={editUserForm.password}
+                              onChange={(e) =>
+                                setEditUserForm((p) => ({ ...p, password: e.target.value }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <SheetFooter className="mt-6 border-t">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => closeEditUserSheet()}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button type="submit" disabled={editUserSaving}>
+                            {editUserSaving ? "Guardando…" : "Guardar cambios"}
+                          </Button>
+                        </SheetFooter>
+                      </form>
+                    )}
+                  </SheetContent>
+                </Sheet>
+                </div>
               </CardHeader>
               <CardContent>
                 {/* Search */}
@@ -416,7 +661,16 @@ export default function AdminPage() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.25 + index * 0.03 }}
+                        role="button"
+                        tabIndex={0}
                         className="group flex items-center gap-4 p-4 rounded-lg border border-border hover:border-primary/30 hover:bg-secondary/30 transition-all cursor-pointer"
+                        onClick={() => void openEditUser(user)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            void openEditUser(user);
+                          }
+                        }}
                       >
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={user.avatar} />
@@ -445,11 +699,17 @@ export default function AdminPage() {
                           </p>
                         </div>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openEditUser(user);
+                          }}
+                          aria-label="Editar usuario"
                         >
-                          <MoreHorizontal className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       </motion.div>
                     );

@@ -47,6 +47,7 @@ export const remis: REMI[] = [
     description: "Consolidar y expandir nuestra presencia en mercados latinoamericanos, aumentando la participación de mercado y diversificando fuentes de ingreso.",
     responsibleUser: users[1],
     responsibleDepartment: departments[0],
+    progresoManual: 0,
   },
   {
     id: "remi2",
@@ -54,6 +55,7 @@ export const remis: REMI[] = [
     description: "Modernizar la infraestructura tecnológica y garantizar una plataforma confiable, escalable y segura para soportar el crecimiento del negocio.",
     responsibleUser: users[2],
     responsibleDepartment: departments[1],
+    progresoManual: 0,
   },
   {
     id: "remi3",
@@ -61,6 +63,7 @@ export const remis: REMI[] = [
     description: "Ofrecer una experiencia de producto excepcional que incremente la retención, satisfacción y engagement de nuestros usuarios.",
     responsibleUser: users[3],
     responsibleDepartment: departments[2],
+    progresoManual: 0,
   },
 ];
 
