@@ -1,0 +1,59 @@
+# OKR Front — export estático Next.js (Hostinger / Apache)
+# Se copia a out/ en cada `npm run build`.
+
+<IfModule mod_negotiation.c>
+  Options -MultiViews -Indexes
+</IfModule>
+
+# --- Seguridad básica ---
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# --- Caché de assets con hash (_next/static) ---
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2?|ttf|eot|ico|png|jpg|jpeg|gif|svg|webp|avif)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# --- Compresión ---
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Archivos reales (_next/static, imágenes, .html directos, etc.)
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # 2. Sin barra final (excepto raíz)
+  RewriteCond %{REQUEST_URI} (.+)/$
+  RewriteRule ^ %1 [R=301,L]
+
+  # 3. Detalle de objetivo: /objectives/{id} → HTML preexportado
+  RewriteRule ^objectives/[^/]+/?$ objectives/__export_build__.html [L]
+
+  # 4. Módulos: /login, /objectives, /admin… → login.html, objectives.html…
+  #    Debe ir ANTES de permitir carpetas: Next exporta objectives.html Y objectives/
+  #    Si Apache entra en la carpeta sin index → 403 Forbidden.
+  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+  RewriteRule ^(.+?)/?$ $1.html [L]
+
+  # 5. Carpetas reales restantes (_next, RSC auxiliar, etc.)
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 6. 404
+  RewriteRule ^ 404.html [L]
+</IfModule>
+
+ErrorDocument 404 /404.html

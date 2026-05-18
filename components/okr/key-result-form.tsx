@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { useData } from "@/lib/data-context";
-import type { KeyResult, KeyResultStatus } from "@/lib/types";
+import type { KeyResult, KeyResultStatus, Objective } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface KeyResultFormProps {
@@ -33,6 +33,7 @@ interface KeyResultFormProps {
   mode: "create" | "edit";
   objectiveId: string;
   keyResult?: KeyResult;
+  onSuccess?: (objective: Objective | null) => void | Promise<void>;
 }
 
 export function KeyResultForm({
@@ -41,6 +42,7 @@ export function KeyResultForm({
   mode,
   objectiveId,
   keyResult,
+  onSuccess,
 }: KeyResultFormProps) {
   const { addKeyResult, updateKeyResult, users, refreshUsers } = useData();
 
@@ -118,6 +120,7 @@ export function KeyResultForm({
 
     setIsSubmitting(true);
     try {
+      let updatedObjective: Objective | null = null;
       if (mode === "create") {
         const newKR: KeyResult = {
           id: "kr-" + Date.now(),
@@ -135,9 +138,9 @@ export function KeyResultForm({
           blockers: blockers.trim(),
           comments: comments.trim(),
         };
-        await addKeyResult(objectiveId, newKR);
+        updatedObjective = await addKeyResult(objectiveId, newKR);
       } else if (keyResult) {
-        await updateKeyResult(objectiveId, keyResult.id, {
+        updatedObjective = await updateKeyResult(objectiveId, keyResult.id, {
           title: title.trim(),
           description: description.trim(),
           owner: selectedOwner,
@@ -152,6 +155,7 @@ export function KeyResultForm({
           comments: comments.trim(),
         });
       }
+      await onSuccess?.(updatedObjective);
       onClose();
     } finally {
       setIsSubmitting(false);

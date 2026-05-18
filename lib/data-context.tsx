@@ -30,12 +30,26 @@ interface DataContextType {
   addObjective: (objective: Objective) => Promise<void>;
   updateObjective: (id: string, updates: Partial<Objective>) => Promise<void>;
   deleteObjective: (id: string) => Promise<void>;
-  addKeyResult: (objectiveId: string, kr: KeyResult) => Promise<void>;
-  updateKeyResult: (objectiveId: string, krId: string, updates: Partial<KeyResult>) => Promise<void>;
-  deleteKeyResult: (objectiveId: string, krId: string) => Promise<void>;
+  addKeyResult: (objectiveId: string, kr: KeyResult) => Promise<Objective | null>;
+  updateKeyResult: (objectiveId: string, krId: string, updates: Partial<KeyResult>) => Promise<Objective | null>;
+  deleteKeyResult: (objectiveId: string, krId: string) => Promise<Objective | null>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
+
+function applyObjectiveToState(
+  setObjectives: React.Dispatch<React.SetStateAction<Objective[]>>,
+  objectiveId: string,
+  objective: Objective
+) {
+  setObjectives((prev) => {
+    const idx = prev.findIndex((o) => String(o.id) === String(objectiveId));
+    if (idx >= 0) {
+      return prev.map((o) => (String(o.id) === String(objectiveId) ? objective : o));
+    }
+    return [objective, ...prev];
+  });
+}
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [objectives, setObjectives] = useState<Objective[]>([]);
@@ -188,7 +202,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setObjectives((prev) => prev.filter((o) => o.id !== id));
   };
 
-  const addKeyResult = async (objectiveId: string, kr: KeyResult) => {
+  const addKeyResult = async (objectiveId: string, kr: KeyResult): Promise<Objective | null> => {
     const payload = {
       title: kr.title,
       description: kr.description,
@@ -203,23 +217,39 @@ export function DataProvider({ children }: { children: ReactNode }) {
       comments: kr.comments,
     };
 
-    const res = await apiFetch<{ keyResult: KeyResult; objective: Objective }>(`/objectives/${objectiveId}/key-results`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    const res = await apiFetch<{ keyResult: KeyResult; objective?: Objective }>(
+      `/objectives/${objectiveId}/key-results`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (res.objective) {
-      setObjectives((prev) => prev.map((o) => (o.id === objectiveId ? res.objective : o)));
-    } else if (res.keyResult) {
-      setObjectives((prev) =>
-        prev.map((o) =>
-          o.id === objectiveId ? { ...o, keyResults: [...o.keyResults, res.keyResult] } : o
-        )
-      );
+      applyObjectiveToState(setObjectives, objectiveId, res.objective);
+      return res.objective;
     }
+    if (res.keyResult) {
+      let updated: Objective | null = null;
+      setObjectives((prev) => {
+        const current = prev.find((o) => String(o.id) === String(objectiveId));
+        if (!current) return prev;
+        updated = {
+          ...current,
+          keyResults: [...current.keyResults, res.keyResult],
+        };
+        return prev.map((o) => (String(o.id) === String(objectiveId) ? updated! : o));
+      });
+      return updated;
+    }
+    return null;
   };
 
-  const updateKeyResult = async (objectiveId: string, krId: string, updates: Partial<KeyResult>) => {
+  const updateKeyResult = async (
+    objectiveId: string,
+    krId: string,
+    updates: Partial<KeyResult>
+  ): Promise<Objective | null> => {
     const payload: Record<string, unknown> = {};
     if (updates.title !== undefined) payload.title = updates.title;
     if (updates.description !== undefined) payload.description = updates.description;
@@ -233,36 +263,58 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (updates.blockers !== undefined) payload.blockers = updates.blockers;
     if (updates.comments !== undefined) payload.comments = updates.comments;
 
-    const res = await apiFetch<{ keyResult: KeyResult; objective: Objective }>(`/objectives/${objectiveId}/key-results/${krId}`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    });
+    const res = await apiFetch<{ keyResult: KeyResult; objective?: Objective }>(
+      `/objectives/${objectiveId}/key-results/${krId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (res.objective) {
-      setObjectives((prev) => prev.map((o) => (o.id === objectiveId ? res.objective : o)));
-    } else if (res.keyResult) {
-      setObjectives((prev) =>
-        prev.map((o) =>
-          o.id === objectiveId
-            ? {
-                ...o,
-                keyResults: o.keyResults.map((kr) => (kr.id === krId ? res.keyResult : kr)),
-              }
-            : o
-        )
-      );
+      applyObjectiveToState(setObjectives, objectiveId, res.objective);
+      return res.objective;
     }
+    if (res.keyResult) {
+      let updated: Objective | null = null;
+      setObjectives((prev) => {
+        const current = prev.find((o) => String(o.id) === String(objectiveId));
+        if (!current) return prev;
+        updated = {
+          ...current,
+          keyResults: current.keyResults.map((kr) =>
+            String(kr.id) === String(krId) ? res.keyResult : kr
+          ),
+        };
+        return prev.map((o) => (String(o.id) === String(objectiveId) ? updated! : o));
+      });
+      return updated;
+    }
+    return null;
   };
 
-  const deleteKeyResult = async (objectiveId: string, krId: string) => {
-    await apiFetch(`/objectives/${objectiveId}/key-results/${krId}`, { method: "DELETE" });
-    setObjectives((prev) =>
-      prev.map((o) =>
-        o.id === objectiveId
-          ? { ...o, keyResults: o.keyResults.filter((kr) => kr.id !== krId) }
-          : o
-      )
+  const deleteKeyResult = async (objectiveId: string, krId: string): Promise<Objective | null> => {
+    const res = await apiFetch<{ message: string; objective?: Objective }>(
+      `/objectives/${objectiveId}/key-results/${krId}`,
+      { method: "DELETE" }
     );
+
+    if (res.objective) {
+      applyObjectiveToState(setObjectives, objectiveId, res.objective);
+      return res.objective;
+    }
+
+    let updated: Objective | null = null;
+    setObjectives((prev) => {
+      const current = prev.find((o) => String(o.id) === String(objectiveId));
+      if (!current) return prev;
+      updated = {
+        ...current,
+        keyResults: current.keyResults.filter((kr) => String(kr.id) !== String(krId)),
+      };
+      return prev.map((o) => (String(o.id) === String(objectiveId) ? updated! : o));
+    });
+    return updated;
   };
 
   const memo_value = useMemo(
