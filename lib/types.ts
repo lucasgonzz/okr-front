@@ -45,6 +45,7 @@ export interface REMI {
   responsibleUser: User | null;
   responsibleDepartment: Department | null;
   progresoManual?: number;
+  quarters?: QuarterModel[];
 }
 
 export interface KeyResult {

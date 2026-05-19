@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
@@ -47,6 +47,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { resolveCurrentQuarterName } from "@/lib/quarter-utils";
 
 // Progress color based on percentage
 function getProgressColor(progress: number): string {
@@ -313,6 +314,7 @@ function ObjectiveRow({
 
 function ObjectivesContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const {
     objectives,
@@ -353,8 +355,14 @@ function ObjectivesContent() {
   const [sortBy, setSortBy] = useState<"progress" | "title">("title");
 
   useEffect(() => {
-    void refreshObjectives();
-  }, [refreshObjectives]);
+    if (pathname !== "/objectives" || quarters.length === 0) return;
+    const current = resolveCurrentQuarterName(quarters);
+    if (!current) return;
+    setSelectedQuarter(current);
+    set_selected_quarter(current);
+    void refreshObjectives(current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- siempre se pasa `current` explícito
+  }, [pathname, quarters, set_selected_quarter]);
 
   // CRUD handlers
   const handleEdit = (objective: Objective) => {
@@ -530,6 +538,7 @@ function ObjectivesContent() {
                 const quarter = value as Quarter;
                 setSelectedQuarter(quarter);
                 set_selected_quarter(quarter);
+                void refreshObjectives(quarter);
               }}
             >
               <SelectTrigger className="w-[120px] bg-background border-border">

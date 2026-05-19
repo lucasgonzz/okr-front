@@ -21,7 +21,7 @@ interface DataContextType {
   selected_quarter: string;
   set_selected_quarter: (quarter: string) => void;
   is_loading: boolean;
-  refreshObjectives: () => Promise<void>;
+  refreshObjectives: (quarterOverride?: string) => Promise<void>;
   refreshRemis: () => Promise<void>;
   refreshUsers: () => Promise<void>;
   refreshDepartments: () => Promise<void>;
@@ -60,11 +60,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [selected_quarter, set_selected_quarter] = useState<string>("Q4-2024");
   const [is_loading, set_is_loading] = useState<boolean>(true);
 
-  const refreshObjectives = useCallback(async () => {
+  const refreshObjectives = useCallback(async (quarterOverride?: string) => {
+    const quarter = quarterOverride ?? selected_quarter;
     set_is_loading(true);
     try {
       const objectives_res = await apiFetch<{ data: Objective[] }>(
-        `/objectives${selected_quarter ? `?quarter=${encodeURIComponent(selected_quarter)}` : ""}`
+        `/objectives${quarter ? `?quarter=${encodeURIComponent(quarter)}` : ""}`
       );
       setObjectives(objectives_res.data || []);
     } catch {
