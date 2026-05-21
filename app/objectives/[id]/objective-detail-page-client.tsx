@@ -173,6 +173,8 @@ function KeyResultCard({
             type="number"
             value={quickValue}
             onChange={(e) => setQuickValue(Number(e.target.value))}
+            onFocus={(e) => e.target.select()}
+            onClick={(e) => (e.target as HTMLInputElement).select()}
             className="w-24 h-8 text-sm"
           />
           <span className="text-xs text-muted-foreground">{keyResult.unit}</span>

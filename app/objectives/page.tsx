@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useData } from "@/lib/data-context";
 import { calculateObjectiveProgress } from "@/lib/okr-calculations";
 import { ObjectiveForm } from "@/components/okr/objective-form";
@@ -139,9 +140,14 @@ function ObjectiveRow({
                 </>
               )}
             </div>
-            <h3 className="font-semibold text-foreground truncate text-sm">
-              {objective.title}
-            </h3>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h3 className="font-semibold text-foreground truncate text-sm">
+                  {objective.title}
+                </h3>
+              </TooltipTrigger>
+              <TooltipContent>{objective.title}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -242,9 +248,14 @@ function ObjectiveRow({
                 {/* Key Result Title (Indented) */}
                 <div className="flex items-center gap-3 min-w-0 pl-10">
                   <Target className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm text-foreground truncate flex-1">
-                    {kr.title}
-                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-sm text-foreground truncate flex-1">
+                        {kr.title}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{kr.title}</TooltipContent>
+                  </Tooltip>
                   {/* Sums to Objective indicator */}
                   {kr.sumsToObjective ? (
                     <span className="text-[10px] text-primary/70 flex items-center gap-0.5 flex-shrink-0">
@@ -593,22 +604,22 @@ function ObjectivesContent() {
                 setStatusFilter(value as ObjectiveStatus | "all")
               }
             >
-              <SelectTrigger className="w-[130px] bg-background border-border">
+              <SelectTrigger className="w-[160px] bg-background border-border">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="en-riesgo">En Riesgo</SelectItem>
                 <SelectItem value="completado">Completado</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={ownerFilter} onValueChange={setOwnerFilter}>
-              <SelectTrigger className="w-[160px] bg-background border-border">
+              <SelectTrigger className="w-[190px] bg-background border-border">
                 <SelectValue placeholder="Responsable" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="all">Todos los responsables</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.name}
@@ -650,12 +661,12 @@ function ObjectivesContent() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.15 }}
-          className="rounded-xl border border-border bg-card overflow-hidden"
+          className="rounded-xl border border-border bg-card"
         >
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[68vh]">
             <div className="min-w-[1190px]">
               {/* Table Header */}
-              <div className="grid grid-cols-[minmax(300px,2fr)_80px_100px_100px_120px_110px_120px_110px] items-center gap-4 px-4 py-3 border-b border-border bg-muted/50">
+              <div className="sticky top-0 z-10 grid grid-cols-[minmax(300px,2fr)_80px_100px_100px_120px_110px_120px_110px] items-center gap-4 px-4 py-3 border-b border-border bg-muted">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Objetivo / Key Result
                 </span>

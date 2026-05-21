@@ -697,6 +697,8 @@ export default function REMIsPage() {
                 max={100}
                 value={new_remi_progress}
                 onChange={(event) => set_new_remi_progress(Number(event.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
           </div>
@@ -792,6 +794,8 @@ export default function REMIsPage() {
                 max={100}
                 value={edit_progress}
                 onChange={(e) => set_edit_progress(Number(e.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
           </div>

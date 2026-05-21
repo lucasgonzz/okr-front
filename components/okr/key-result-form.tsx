@@ -241,6 +241,8 @@ export function KeyResultForm({
                 type="number"
                 value={startValue}
                 onChange={(e) => setStartValue(Number(e.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
             <div className="space-y-2">
@@ -250,6 +252,8 @@ export function KeyResultForm({
                 type="number"
                 value={currentValue}
                 onChange={(e) => setCurrentValue(Number(e.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
             <div className="space-y-2">
@@ -260,6 +264,8 @@ export function KeyResultForm({
                 min={1}
                 value={target}
                 onChange={(e) => setTarget(Number(e.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
           </div>

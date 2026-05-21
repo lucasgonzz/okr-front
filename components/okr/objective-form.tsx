@@ -322,6 +322,8 @@ export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormP
                   max={100}
                   value={manualProgress}
                   onChange={(e) => setManualProgress(Number(e.target.value))}
+                  onFocus={(e) => e.target.select()}
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
                 />
               </div>
 
