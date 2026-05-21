@@ -44,7 +44,7 @@ export function SuperAdminSidebar({ className }: SuperAdminSidebarProps) {
             Platform Admin
           </span>
           <span className="text-xs text-sidebar-foreground/50 leading-tight">
-            OKR Platform
+            Panel OKRs
           </span>
         </div>
       </div>

@@ -9,7 +9,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'OKR Platform - Enterprise Objectives & Key Results Management',
+  title: 'Panel OKRs - Gestión de Objetivos y Resultados Clave',
   description: 'Premium B2B SaaS platform for tracking company OKRs, objectives, and key results across departments and quarters.',
   generator: 'v0.app',
   icons: {

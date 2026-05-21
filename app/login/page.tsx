@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Target, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -99,14 +99,14 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ background: "oklch(0.55 0.15 175)" }}
-          >
-            <Target className="h-5 w-5 text-white" />
-          </div>
+          <svg width="36" height="36" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="26" cy="26" r="18" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+            <polygon points="26,10 22,26 26,24 30,26" fill="#1DB87A"/>
+            <polygon points="26,42 22,26 26,28 30,26" fill="rgba(255,255,255,0.2)"/>
+            <circle cx="26" cy="26" r="2.5" fill="transparent" stroke="#1DB87A" strokeWidth="1.5"/>
+          </svg>
           <span className="text-white font-semibold text-lg tracking-tight">
-            OKR Platform
+            Panel OKRs
           </span>
         </div>
 
@@ -161,11 +161,14 @@ export default function LoginPage() {
         >
           {/* Logo mobile (solo < lg) */}
           <div className="flex flex-col items-center mb-10 lg:hidden">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary mb-3">
-              <Target className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-3">
+              <circle cx="26" cy="26" r="18" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+              <polygon points="26,10 22,26 26,24 30,26" fill="#1DB87A"/>
+              <polygon points="26,42 22,26 26,28 30,26" fill="rgba(255,255,255,0.2)"/>
+              <circle cx="26" cy="26" r="2.5" fill="transparent" stroke="#1DB87A" strokeWidth="1.5"/>
+            </svg>
             <h1 className="text-xl font-semibold text-foreground">
-              OKR Platform
+              Panel OKRs
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Gestión de Objetivos y Resultados Clave
