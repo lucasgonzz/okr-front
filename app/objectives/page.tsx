@@ -47,7 +47,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { resolveCurrentQuarterName } from "@/lib/quarter-utils";
 
 // Progress color based on percentage
 function getProgressColor(progress: number): string {
@@ -105,7 +104,7 @@ function ObjectiveRow({
       {/* Objective Parent Row */}
       <div
         className={cn(
-          "group grid grid-cols-[minmax(300px,2fr)_80px_100px_100px_120px_140px_250px] items-center gap-4 px-4 py-3 border-b border-border cursor-pointer transition-colors",
+          "group grid grid-cols-[minmax(300px,2fr)_80px_100px_100px_120px_110px_120px_110px] items-center gap-4 px-4 py-3 border-b border-border cursor-pointer transition-colors",
           "bg-secondary/50 hover:bg-secondary/70"
         )}
         onClick={() => setIsExpanded(!isExpanded)}
@@ -156,7 +155,7 @@ function ObjectiveRow({
         <div className="text-sm text-muted-foreground text-center">—</div>
 
         {/* Progress */}
-        <div className="flex items-center gap-2">
+        <div className="flex justify-center items-center gap-2">
           <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
             <motion.div
               className={cn("h-full rounded-full", getProgressColor(calculated.progress))}
@@ -182,15 +181,19 @@ function ObjectiveRow({
           </span>
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-start items-center gap-1">
+        {/* Estado */}
+        <div className="flex justify-center items-center">
           <StatusBadge status={calculated.status} size="sm" />
+        </div>
+
+        {/* Acciones */}
+        <div className="flex justify-center items-center gap-1">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onEdit(objective);
             }}
-            className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-primary/10 transition-all"
+            className="p-1.5 rounded hover:bg-primary/10 transition-all"
             title="Editar objetivo"
           >
             <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
@@ -201,7 +204,7 @@ function ObjectiveRow({
               onDelete(objective);
             }}
             disabled={isDeleting}
-            className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-all"
+            className="p-1.5 rounded hover:bg-destructive/10 transition-all"
             title="Eliminar objetivo"
           >
             {isDeleting ? (
@@ -213,7 +216,7 @@ function ObjectiveRow({
           <Link
             href={`/objectives/${objective.id}`}
             onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-primary/10 transition-all"
+            className="p-1.5 rounded hover:bg-primary/10 transition-all"
             title="Ver detalle"
           >
             <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
@@ -234,7 +237,7 @@ function ObjectiveRow({
             {objective.keyResults.map((kr, krIndex) => (
               <div
                 key={kr.id}
-                className="grid grid-cols-[minmax(300px,2fr)_80px_100px_100px_120px_140px_250px] items-center gap-4 px-4 py-2.5 border-b border-border/50 bg-card hover:bg-card/80 transition-colors"
+                className="grid grid-cols-[minmax(300px,2fr)_80px_100px_100px_120px_110px_120px_110px] items-center gap-4 px-4 py-2.5 border-b border-border/50 bg-card hover:bg-card/80 transition-colors"
               >
                 {/* Key Result Title (Indented) */}
                 <div className="flex items-center gap-3 min-w-0 pl-10">
@@ -271,7 +274,7 @@ function ObjectiveRow({
                 </div>
 
                 {/* Progress */}
-                <div className="flex items-center gap-2">
+                <div className="flex justify-center items-center gap-2">
                   <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                     <motion.div
                       className={cn("h-full rounded-full", getProgressColor(kr.progress))}
@@ -298,9 +301,12 @@ function ObjectiveRow({
                 </div>
 
                 {/* Status */}
-                <div className="flex justify-start">
+                <div className="flex justify-center">
                   <StatusBadge status={kr.status} size="sm" />
                 </div>
+
+                {/* Acciones (vacío para KRs) */}
+                <div />
               </div>
             ))}
           </motion.div>
@@ -354,13 +360,8 @@ function ObjectivesContent() {
 
   useEffect(() => {
     if (pathname !== "/objectives" || quarters.length === 0) return;
-    const current = resolveCurrentQuarterName(quarters);
-    if (!current) return;
-    setSelectedQuarter(current);
-    set_selected_quarter(current);
-    void refreshObjectives(current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- siempre se pasa `current` explícito
-  }, [pathname, quarters, set_selected_quarter]);
+    void refreshObjectives();
+  }, [pathname, quarters, refreshObjectives]);
 
   // CRUD handlers
   const handleEdit = (objective: Objective) => {
@@ -654,7 +655,7 @@ function ObjectivesContent() {
           <div className="overflow-x-auto">
             <div className="min-w-[1190px]">
               {/* Table Header */}
-              <div className="grid grid-cols-[minmax(300px,2fr)_80px_100px_100px_120px_140px_250px] items-center gap-4 px-4 py-3 border-b border-border bg-muted/50">
+              <div className="grid grid-cols-[minmax(300px,2fr)_80px_100px_100px_120px_110px_120px_110px] items-center gap-4 px-4 py-3 border-b border-border bg-muted/50">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Objetivo / Key Result
                 </span>
@@ -675,6 +676,9 @@ function ObjectivesContent() {
                 </span>
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">
                   Estado
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">
+                  Acciones
                 </span>
             </div>
 
