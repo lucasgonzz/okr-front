@@ -241,7 +241,6 @@ export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormP
                   <SelectItem key={user.id} value={user.id}>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarImage src={user.avatar} />
                         <AvatarFallback className="text-[10px]">
                           {user.name.charAt(0)}
                         </AvatarFallback>

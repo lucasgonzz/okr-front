@@ -276,7 +276,6 @@ function REMICard({
               {remi.responsibleUser ? (
                 <>
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={remi.responsibleUser.avatar} />
                     <AvatarFallback className="text-xs">
                       {remi.responsibleUser.name.charAt(0)}
                     </AvatarFallback>

@@ -74,7 +74,6 @@ export default function AdminPage() {
   const [newUserForm, setNewUserForm] = useState({
     departmentId: "",
     role: "user" as "admin" | "user",
-    avatar: "",
     email: "",
     password: "",
   });
@@ -127,7 +126,6 @@ export default function AdminPage() {
     setNewUserForm({
       departmentId: "",
       role: "user",
-      avatar: "",
       email: "",
       password: "",
     });
@@ -154,7 +152,6 @@ export default function AdminPage() {
         body: JSON.stringify({
           department_id: newUserForm.departmentId,
           role: newUserForm.role,
-          avatar: newUserForm.avatar || null,
           email: newUserForm.email,
           password: newUserForm.password,
           name: inferredName,
@@ -673,7 +670,6 @@ export default function AdminPage() {
                         }}
                       >
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.avatar} />
                           <AvatarFallback className="bg-secondary text-secondary-foreground">
                             {user.name.charAt(0)}
                           </AvatarFallback>
@@ -803,7 +799,6 @@ export default function AdminPage() {
                         {dept.head ? (
                           <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={dept.head.avatar} />
                               <AvatarFallback className="text-xs">
                                 {dept.head.name.charAt(0)}
                               </AvatarFallback>

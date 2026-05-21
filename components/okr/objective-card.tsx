@@ -66,7 +66,6 @@ export function ObjectiveCard({
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Avatar className="h-6 w-6">
-            <AvatarImage src={objective.owner.avatar} />
             <AvatarFallback className="text-xs bg-secondary text-secondary-foreground">
               {objective.owner.name.charAt(0)}
             </AvatarFallback>

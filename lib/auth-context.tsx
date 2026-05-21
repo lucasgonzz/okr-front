@@ -16,8 +16,7 @@ export interface AuthUser {
   role: "super_admin" | "admin" | "user";
   companyId: string | null;
   departmentId: string | null;
-  avatar: string | null;
-  company?: { id: string; name: string; slug: string; active: boolean } | null;
+  company?:{ id: string; name: string; slug: string; active: boolean } | null;
 }
 
 interface LoginResult {

@@ -38,7 +38,6 @@ interface LogEntry {
   objectiveId?: string;
   user: {
     name: string;
-    avatar?: string;
   };
   changes: RawLogChange[];
   timestamp: Date;
@@ -59,7 +58,7 @@ interface RawLogItem {
   objectiveId?: string | null;
   keyResultId?: string | null;
   userId: string | null;
-  user: { name: string; avatar?: string | null } | null;
+  user: { name: string } | null;
   changes: RawLogChange[] | null;
   createdAt: string;
 }
@@ -127,7 +126,6 @@ export default function LogsPage() {
             objectiveId: log.objectiveId || undefined,
             user: {
               name: log.user?.name || "Sistema",
-              avatar: log.user?.avatar || undefined,
             },
             changes,
             timestamp: new Date(log.createdAt),
@@ -416,7 +414,6 @@ export default function LogsPage() {
                                 <div className="flex-1 pb-4">
                                   <div className="flex items-center gap-2 flex-wrap mb-1">
                                     <Avatar className="h-6 w-6">
-                                      <AvatarImage src={log.user.avatar} />
                                       <AvatarFallback className="text-xs">
                                         {log.user.name.charAt(0)}
                                       </AvatarFallback>

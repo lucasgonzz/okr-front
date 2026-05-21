@@ -173,7 +173,6 @@ function ObjectiveRow({
         {/* Owner */}
         <div className="flex items-center gap-2">
           <Avatar className="h-6 w-6">
-            <AvatarImage src={objective.owner.avatar} />
             <AvatarFallback className="text-xs bg-primary/20 text-primary">
               {objective.owner.name.charAt(0)}
             </AvatarFallback>
@@ -289,7 +288,6 @@ function ObjectiveRow({
                 {/* Owner */}
                 <div className="flex items-center gap-2">
                   <Avatar className="h-5 w-5">
-                    <AvatarImage src={kr.owner.avatar} />
                     <AvatarFallback className="text-[10px] bg-muted text-muted-foreground">
                       {kr.owner.name.charAt(0)}
                     </AvatarFallback>

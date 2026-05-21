@@ -208,7 +208,6 @@ function KeyResultCard({
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
         <div className="flex items-center gap-2">
           <Avatar className="h-6 w-6">
-            <AvatarImage src={keyResult.owner.avatar} />
             <AvatarFallback className="text-xs bg-secondary text-secondary-foreground">
               {keyResult.owner.name.charAt(0)}
             </AvatarFallback>
