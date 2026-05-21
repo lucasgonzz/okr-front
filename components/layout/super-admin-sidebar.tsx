@@ -44,7 +44,7 @@ export function SuperAdminSidebar({ className }: SuperAdminSidebarProps) {
             Platform Admin
           </span>
           <span className="text-xs text-sidebar-foreground/50 leading-tight">
-            OKR Platform
+            Panel OKRs
           </span>
         </div>
       </div>
@@ -93,7 +93,6 @@ export function SuperAdminSidebar({ className }: SuperAdminSidebarProps) {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent/50 p-3 mb-3">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user?.avatar ?? undefined} />
             <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground">
               {user?.name?.charAt(0) ?? "S"}
             </AvatarFallback>

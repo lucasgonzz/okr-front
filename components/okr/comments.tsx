@@ -20,7 +20,6 @@ function CommentItem({ comment, depth = 0 }: CommentItemProps) {
   return (
     <div className={cn("flex gap-3", depth > 0 && "ml-10 mt-3")}>
       <Avatar className="h-8 w-8 flex-shrink-0">
-        <AvatarImage src={comment.author.avatar} />
         <AvatarFallback className="text-xs bg-secondary text-secondary-foreground">
           {comment.author.name.charAt(0)}
         </AvatarFallback>

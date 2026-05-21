@@ -276,7 +276,6 @@ function REMICard({
               {remi.responsibleUser ? (
                 <>
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={remi.responsibleUser.avatar} />
                     <AvatarFallback className="text-xs">
                       {remi.responsibleUser.name.charAt(0)}
                     </AvatarFallback>
@@ -494,6 +493,14 @@ export default function REMIsPage() {
     refreshQuarters,
   ]);
 
+  // ── REMIs filtered by selected quarter ────────────────────────────────────
+  const filteredRemis = useMemo(() => {
+    return remis.filter((remi) => {
+      if (!remi.quarters || remi.quarters.length === 0) return true;
+      return remi.quarters.some((q) => q.name === selectedQuarter);
+    });
+  }, [remis, selectedQuarter]);
+
   // ── Objectives grouped by REMI ─────────────────────────────────────────────
   const remiObjectivesMap = useMemo(() => {
     const map = new Map<string, Objective[]>();
@@ -604,7 +611,7 @@ export default function REMIsPage() {
               <Spinner className="mb-3 h-6 w-6 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Cargando REMIs...</p>
             </div>
-          ) : remis.map((remi, index) => (
+          ) : filteredRemis.map((remi, index) => (
             <REMICard
               key={remi.id}
               remi={remi}
@@ -619,14 +626,14 @@ export default function REMIsPage() {
 
       {/* ── Crear REMI dialog ──────────────────────────────────────────────── */}
       <Dialog open={is_create_modal_open} onOpenChange={set_is_create_modal_open}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="flex flex-col max-h-[90vh] p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
             <DialogTitle>Nuevo REMI</DialogTitle>
             <DialogDescription>
               Crea un nuevo resultado estratégico para agrupar objetivos.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto px-6 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="remi_name">Nombre</Label>
               <Input
@@ -681,7 +688,7 @@ export default function REMIsPage() {
                 onChange={set_new_quarter_ids}
               />
             </div>
-            <div className="space-y-2">
+            <div className="pb-2 space-y-2">
               <Label htmlFor="new_remi_progress">Progreso (%)</Label>
               <Input
                 id="new_remi_progress"
@@ -690,10 +697,12 @@ export default function REMIsPage() {
                 max={100}
                 value={new_remi_progress}
                 onChange={(event) => set_new_remi_progress(Number(event.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="px-6 py-4 border-t border-border flex-shrink-0">
             <Button variant="outline" onClick={() => set_is_create_modal_open(false)}>
               Cancelar
             </Button>
@@ -712,7 +721,7 @@ export default function REMIsPage() {
       <Sheet open={is_edit_sheet_open} onOpenChange={set_is_edit_sheet_open}>
         <SheetContent
           side="right"
-          className="flex h-full w-[480px] sm:max-w-[480px] flex-col overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-14"
+          className="flex h-full w-full sm:w-[480px] sm:max-w-[480px] flex-col overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-14"
         >
           <SheetHeader className="p-0">
             <SheetTitle>Editar REMI</SheetTitle>
@@ -785,6 +794,8 @@ export default function REMIsPage() {
                 max={100}
                 value={edit_progress}
                 onChange={(e) => set_edit_progress(Number(e.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
           </div>

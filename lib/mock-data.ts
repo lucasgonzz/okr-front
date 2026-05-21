@@ -12,16 +12,16 @@ import type {
 
 // Users - roles are now only "admin" or "user"
 export const users: User[] = [
-  { id: "u1", name: "María García", email: "maria.garcia@company.com", role: "admin", department: "Admin", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Maria" },
-  { id: "u2", name: "Carlos Rodríguez", email: "carlos.rodriguez@company.com", role: "user", department: "Comercial", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Carlos" },
-  { id: "u3", name: "Ana Martínez", email: "ana.martinez@company.com", role: "admin", department: "IT", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Ana" },
-  { id: "u4", name: "Pedro López", email: "pedro.lopez@company.com", role: "user", department: "Producto", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Pedro" },
-  { id: "u5", name: "Laura Sánchez", email: "laura.sanchez@company.com", role: "user", department: "Business Operations", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Laura" },
-  { id: "u6", name: "Diego Fernández", email: "diego.fernandez@company.com", role: "user", department: "Performance", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Diego" },
-  { id: "u7", name: "Sofía Ruiz", email: "sofia.ruiz@company.com", role: "user", department: "Chile", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Sofia" },
-  { id: "u8", name: "Alejandro Torres", email: "alejandro.torres@company.com", role: "user", department: "Perú", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Alejandro" },
-  { id: "u9", name: "Isabella Moreno", email: "isabella.moreno@company.com", role: "admin", department: "Europa", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Isabella" },
-  { id: "u10", name: "Javier Díaz", email: "javier.diaz@company.com", role: "user", department: "Comercial", avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Javier" },
+  { id: "u1", name: "María García", email: "maria.garcia@company.com", role: "admin", department: "Admin" },
+  { id: "u2", name: "Carlos Rodríguez", email: "carlos.rodriguez@company.com", role: "user", department: "Comercial" },
+  { id: "u3", name: "Ana Martínez", email: "ana.martinez@company.com", role: "admin", department: "IT" },
+  { id: "u4", name: "Pedro López", email: "pedro.lopez@company.com", role: "user", department: "Producto" },
+  { id: "u5", name: "Laura Sánchez", email: "laura.sanchez@company.com", role: "user", department: "Business Operations" },
+  { id: "u6", name: "Diego Fernández", email: "diego.fernandez@company.com", role: "user", department: "Performance" },
+  { id: "u7", name: "Sofía Ruiz", email: "sofia.ruiz@company.com", role: "user", department: "Chile" },
+  { id: "u8", name: "Alejandro Torres", email: "alejandro.torres@company.com", role: "user", department: "Perú" },
+  { id: "u9", name: "Isabella Moreno", email: "isabella.moreno@company.com", role: "admin", department: "Europa" },
+  { id: "u10", name: "Javier Díaz", email: "javier.diaz@company.com", role: "user", department: "Comercial" },
 ];
 
 export const currentUser = users[0];

@@ -194,25 +194,25 @@ export default function DepartmentsPage() {
                   </div>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
                     <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-muted-foreground" />
+                      <Target className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-foreground">
                           {dept.objectiveCount}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground whitespace-nowrap">
                           Objetivos
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-warning" />
+                      <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-foreground">
                           {dept.atRiskCount}
                         </p>
-                        <p className="text-xs text-muted-foreground">En Riesgo</p>
+                        <p className="text-xs text-muted-foreground whitespace-nowrap">En Riesgo</p>
                       </div>
                     </div>
                   </div>

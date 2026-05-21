@@ -74,7 +74,6 @@ export function ActivityFeed({
                 <div className="flex-1 pb-4">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-5 w-5">
-                      <AvatarImage src={activity.user.avatar} />
                       <AvatarFallback className="text-xs">
                         {activity.user.name.charAt(0)}
                       </AvatarFallback>

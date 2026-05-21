@@ -11,6 +11,7 @@ import {
 } from "react";
 import { apiFetch } from "@/lib/api";
 import type { Department, Objective, KeyResult, QuarterModel, REMI, User } from "@/lib/types";
+import { resolveCurrentQuarterName } from "@/lib/quarter-utils";
 
 interface DataContextType {
   objectives: Objective[];
@@ -58,6 +59,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [quarters, setQuarters] = useState<QuarterModel[]>([]);
   const [selected_quarter, set_selected_quarter] = useState<string>("Q4-2024");
+  const [quarter_initialized, set_quarter_initialized] = useState(false);
   const [is_loading, set_is_loading] = useState<boolean>(true);
 
   const refreshObjectives = useCallback(async (quarterOverride?: string) => {
@@ -149,6 +151,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refreshQuarters();
   }, [refreshQuarters]);
+
+  // Inicializa el trimestre seleccionado al trimestre vigente una sola vez,
+  // cuando los quarters cargan por primera vez.
+  useEffect(() => {
+    if (quarter_initialized || quarters.length === 0) return;
+    const current = resolveCurrentQuarterName(quarters);
+    if (current) {
+      set_selected_quarter(current);
+      set_quarter_initialized(true);
+    }
+  }, [quarters, quarter_initialized]);
 
   const addObjective = async (objective: Objective) => {
     const payload = {

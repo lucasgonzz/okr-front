@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 import { AppTopbar } from "./app-topbar";
@@ -19,14 +20,17 @@ export function AppShell({
   selectedQuarter,
   onQuarterChange,
 }: AppShellProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-background">
-        <AppSidebar />
-        <div className="pl-64">
+        <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="lg:pl-64">
           <AppTopbar
             selectedQuarter={selectedQuarter}
             onQuarterChange={onQuarterChange}
+            onMenuClick={() => setSidebarOpen(true)}
           />
           <main className={cn("min-h-[calc(100vh-4rem)] p-6", className)}>
             {children}

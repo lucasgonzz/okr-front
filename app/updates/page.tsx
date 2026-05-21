@@ -38,7 +38,6 @@ interface LogEntry {
   objectiveId?: string;
   user: {
     name: string;
-    avatar?: string;
   };
   changes: RawLogChange[];
   timestamp: Date;
@@ -59,7 +58,7 @@ interface RawLogItem {
   objectiveId?: string | null;
   keyResultId?: string | null;
   userId: string | null;
-  user: { name: string; avatar?: string | null } | null;
+  user: { name: string } | null;
   changes: RawLogChange[] | null;
   createdAt: string;
 }
@@ -127,7 +126,6 @@ export default function LogsPage() {
             objectiveId: log.objectiveId || undefined,
             user: {
               name: log.user?.name || "Sistema",
-              avatar: log.user?.avatar || undefined,
             },
             changes,
             timestamp: new Date(log.createdAt),
@@ -232,7 +230,7 @@ export default function LogsPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05 }}
-          className="mb-6 grid grid-cols-4 gap-4"
+          className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4"
         >
           <Card>
             <CardContent className="pt-6">
@@ -259,7 +257,7 @@ export default function LogsPage() {
                   <p className="text-2xl font-semibold text-foreground">
                     {allLogs.filter((l) => l.type === "update").length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Actualizaciones</p>
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">Actualizaciones</p>
                 </div>
               </div>
             </CardContent>
@@ -289,7 +287,7 @@ export default function LogsPage() {
                   <p className="text-2xl font-semibold text-foreground">
                     {allLogs.filter((l) => l.type === "deletion").length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Eliminaciones</p>
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">Eliminaciones</p>
                 </div>
               </div>
             </CardContent>
@@ -416,7 +414,6 @@ export default function LogsPage() {
                                 <div className="flex-1 pb-4">
                                   <div className="flex items-center gap-2 flex-wrap mb-1">
                                     <Avatar className="h-6 w-6">
-                                      <AvatarImage src={log.user.avatar} />
                                       <AvatarFallback className="text-xs">
                                         {log.user.name.charAt(0)}
                                       </AvatarFallback>

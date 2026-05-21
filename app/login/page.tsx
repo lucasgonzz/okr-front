@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Target, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,54 +62,136 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-      {/* Background Pattern */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/3 rounded-full blur-3xl" />
+    <div className="min-h-screen flex overflow-hidden">
+
+      {/* ─── Panel izquierdo: Branding ─── */}
+      <div
+        className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-14 overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(145deg, oklch(0.19 0.07 175) 0%, oklch(0.11 0.04 175) 100%)",
+        }}
+      >
+        {/* Decoración: círculos difusos */}
+        <div
+          className="absolute -top-28 -right-28 w-[420px] h-[420px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, oklch(0.55 0.15 175 / 0.18) 0%, transparent 70%)",
+          }}
+        />
+        <div
+          className="absolute -bottom-36 -left-20 w-[380px] h-[380px] rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, oklch(0.55 0.15 175 / 0.14) 0%, transparent 70%)",
+          }}
+        />
+        {/* Decoración: grilla de puntos */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, white 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        {/* Logo */}
+        <div className="relative z-10 flex items-center gap-3">
+          <svg width="36" height="36" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="26" cy="26" r="18" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+            <polygon points="26,10 22,26 26,24 30,26" fill="#1DB87A"/>
+            <polygon points="26,42 22,26 26,28 30,26" fill="rgba(255,255,255,0.2)"/>
+            <circle cx="26" cy="26" r="2.5" fill="transparent" stroke="#1DB87A" strokeWidth="1.5"/>
+          </svg>
+          <span className="text-white font-semibold text-lg tracking-tight">
+            Panel OKRs
+          </span>
+        </div>
+
+        {/* Copy principal */}
+        <div className="relative z-10 space-y-8">
+          <div>
+            <h2 className="text-3xl lg:text-[2.6rem] font-bold text-white leading-[1.15] tracking-tight">
+              Alcanzá tus{" "}
+              <span style={{ color: "oklch(0.72 0.16 175)" }}>objetivos</span>
+              <br />
+              con claridad
+            </h2>
+            <p className="mt-4 text-white/55 text-[0.95rem] leading-relaxed max-w-[280px]">
+              Alineá equipos, medí resultados y ejecutá estrategias con la
+              metodología OKR.
+            </p>
+          </div>
+
+          {/* Feature list */}
+          <div className="space-y-3.5">
+            {[
+              "Objetivos y resultados clave en tiempo real",
+              "Visibilidad completa por departamento",
+              "REMIs y alineación estratégica",
+            ].map((feat) => (
+              <div key={feat} className="flex items-center gap-3">
+                <div
+                  className="h-[7px] w-[7px] rounded-full flex-shrink-0"
+                  style={{ background: "oklch(0.60 0.15 175)" }}
+                />
+                <span className="text-white/65 text-sm">{feat}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pie */}
+        <div className="relative z-10">
+          <p className="text-white/25 text-xs tracking-wide">
+            Autenticación segura · Datos encriptados
+          </p>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        {/* Logo */}
+      {/* ─── Panel derecho: Formulario ─── */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex flex-col items-center mb-8"
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.45 }}
+          className="w-full max-w-[360px]"
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary mb-4">
-            <Target className="h-7 w-7 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-semibold text-foreground">OKR Platform</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gestión de Objetivos y Resultados Clave
-          </p>
-        </motion.div>
-
-        {/* Login Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="rounded-2xl border border-border bg-card p-8 shadow-xl shadow-black/5"
-        >
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-foreground">Bienvenido</h2>
+          {/* Logo mobile (solo < lg) */}
+          <div className="flex flex-col items-center mb-10 lg:hidden">
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-3">
+              <circle cx="26" cy="26" r="18" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+              <polygon points="26,10 22,26 26,24 30,26" fill="#1DB87A"/>
+              <polygon points="26,42 22,26 26,28 30,26" fill="rgba(255,255,255,0.2)"/>
+              <circle cx="26" cy="26" r="2.5" fill="transparent" stroke="#1DB87A" strokeWidth="1.5"/>
+            </svg>
+            <h1 className="text-xl font-semibold text-foreground">
+              Panel OKRs
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
+              Gestión de Objetivos y Resultados Clave
+            </p>
+          </div>
+
+          {/* Encabezado */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-foreground tracking-tight">
+              Bienvenido
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1.5">
               Iniciá sesión para acceder a tu panel
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email Field */}
+            {/* Email */}
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-foreground"
+              >
                 Email
               </label>
               <div className="relative">
@@ -127,9 +209,12 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password Field */}
+            {/* Contraseña */}
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-foreground"
+              >
                 Contraseña
               </label>
               <div className="relative">
@@ -147,7 +232,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Error Message */}
+            {/* Error */}
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -159,7 +244,7 @@ export default function LoginPage() {
               </motion.div>
             )}
 
-            {/* Submit Button */}
+            {/* Submit */}
             <Button
               type="submit"
               className="w-full h-11 font-medium"
@@ -175,45 +260,8 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 pt-6 border-t border-border">
-            <p className="text-xs text-muted-foreground text-center mb-3">
-              Credenciales de demo
-            </p>
-            <div className="rounded-lg bg-secondary/50 p-3 text-xs text-muted-foreground font-mono space-y-2">
-              <p className="text-foreground font-semibold">Super Admin</p>
-              <div className="flex justify-between">
-                <span>Email:</span>
-                <span className="text-foreground">superadmin@platform.com</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Password:</span>
-                <span className="text-foreground">123456</span>
-              </div>
-              <p className="text-foreground font-semibold pt-1">Admin (Demo Corp)</p>
-              <div className="flex justify-between">
-                <span>Email:</span>
-                <span className="text-foreground">admin@demo.com</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Password:</span>
-                <span className="text-foreground">123456</span>
-              </div>
-            </div>
-          </div>
         </motion.div>
-
-        {/* Footer */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-center text-xs text-muted-foreground mt-6"
-        >
-          Autenticación segura para empresas
-        </motion.p>
-      </motion.div>
+      </div>
     </div>
   );
 }

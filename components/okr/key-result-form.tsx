@@ -169,7 +169,7 @@ export function KeyResultForm({
       <SheetContent
         side="right"
         className={cn(
-          "w-[560px] sm:max-w-[560px] overflow-y-auto px-[15px]",
+          "w-full sm:w-[560px] sm:max-w-[560px] overflow-y-auto px-[15px]",
           mode === "create" && "py-[15px]"
         )}
       >
@@ -220,7 +220,6 @@ export function KeyResultForm({
                   <SelectItem key={user.id} value={user.id}>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarImage src={user.avatar} />
                         <AvatarFallback className="text-[10px]">
                           {user.name.charAt(0)}
                         </AvatarFallback>
@@ -234,7 +233,7 @@ export function KeyResultForm({
           </div>
 
           {/* Valores: Start, Current, Target */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startValue">Valor inicial</Label>
               <Input
@@ -242,6 +241,8 @@ export function KeyResultForm({
                 type="number"
                 value={startValue}
                 onChange={(e) => setStartValue(Number(e.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
             <div className="space-y-2">
@@ -251,6 +252,8 @@ export function KeyResultForm({
                 type="number"
                 value={currentValue}
                 onChange={(e) => setCurrentValue(Number(e.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
             <div className="space-y-2">
@@ -261,6 +264,8 @@ export function KeyResultForm({
                 min={1}
                 value={target}
                 onChange={(e) => setTarget(Number(e.target.value))}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
               />
             </div>
           </div>

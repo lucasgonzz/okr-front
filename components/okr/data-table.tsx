@@ -64,7 +64,6 @@ export function DataTable({ objectives, className, onRowClick }: DataTableProps)
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={objective.owner.avatar} />
                     <AvatarFallback className="text-xs bg-secondary text-secondary-foreground">
                       {objective.owner.name.charAt(0)}
                     </AvatarFallback>
