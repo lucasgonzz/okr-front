@@ -169,7 +169,7 @@ export function KeyResultForm({
       <SheetContent
         side="right"
         className={cn(
-          "w-[560px] sm:max-w-[560px] overflow-y-auto px-[15px]",
+          "w-full sm:w-[560px] sm:max-w-[560px] overflow-y-auto px-[15px]",
           mode === "create" && "py-[15px]"
         )}
       >
@@ -233,7 +233,7 @@ export function KeyResultForm({
           </div>
 
           {/* Valores: Start, Current, Target */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startValue">Valor inicial</Label>
               <Input

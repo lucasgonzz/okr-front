@@ -113,7 +113,7 @@ export default function LoginPage() {
         {/* Copy principal */}
         <div className="relative z-10 space-y-8">
           <div>
-            <h2 className="text-[2.6rem] font-bold text-white leading-[1.15] tracking-tight">
+            <h2 className="text-3xl lg:text-[2.6rem] font-bold text-white leading-[1.15] tracking-tight">
               Alcanzá tus{" "}
               <span style={{ color: "oklch(0.72 0.16 175)" }}>objetivos</span>
               <br />

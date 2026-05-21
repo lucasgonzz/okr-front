@@ -230,7 +230,7 @@ export default function LogsPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05 }}
-          className="mb-6 grid grid-cols-4 gap-4"
+          className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4"
         >
           <Card>
             <CardContent className="pt-6">
@@ -257,7 +257,7 @@ export default function LogsPage() {
                   <p className="text-2xl font-semibold text-foreground">
                     {allLogs.filter((l) => l.type === "update").length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Actualizaciones</p>
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">Actualizaciones</p>
                 </div>
               </div>
             </CardContent>
@@ -287,7 +287,7 @@ export default function LogsPage() {
                   <p className="text-2xl font-semibold text-foreground">
                     {allLogs.filter((l) => l.type === "deletion").length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Eliminaciones</p>
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">Eliminaciones</p>
                 </div>
               </div>
             </CardContent>

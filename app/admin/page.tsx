@@ -772,6 +772,7 @@ export default function AdminPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto w-full">
               <Table className="min-w-[760px]">
                 <TableHeader>
                   <TableRow>
@@ -827,6 +828,7 @@ export default function AdminPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

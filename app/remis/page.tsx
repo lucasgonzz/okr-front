@@ -721,7 +721,7 @@ export default function REMIsPage() {
       <Sheet open={is_edit_sheet_open} onOpenChange={set_is_edit_sheet_open}>
         <SheetContent
           side="right"
-          className="flex h-full w-[480px] sm:max-w-[480px] flex-col overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-14"
+          className="flex h-full w-full sm:w-[480px] sm:max-w-[480px] flex-col overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-14"
         >
           <SheetHeader className="p-0">
             <SheetTitle>Editar REMI</SheetTitle>

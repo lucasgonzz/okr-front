@@ -167,7 +167,7 @@ export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormP
       <SheetContent
         side="right"
         className={cn(
-          "w-[560px] sm:max-w-[560px] overflow-y-auto px-[15px]",
+          "w-full sm:w-[560px] sm:max-w-[560px] overflow-y-auto px-[15px]",
           mode === "create" && "py-[15px]"
         )}
       >
