@@ -39,7 +39,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Quarter, QuarterModel, REMI, Objective } from "@/lib/types";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Flag,
   Target,
@@ -60,54 +59,9 @@ function clamp_remi_progreso_manual(value: number): number {
   return Math.min(100, Math.max(0, n));
 }
 
-function QuarterMultiSelect({
-  quarters,
-  selectedIds,
-  onChange,
-}: {
-  quarters: QuarterModel[];
-  selectedIds: string[];
-  onChange: (ids: string[]) => void;
-}) {
-  const sorted = useMemo(
-    () => [...quarters].sort((a, b) => b.year - a.year || a.position - b.position),
-    [quarters]
-  );
-
-  const toggle = (id: string, checked: boolean) => {
-    if (checked) {
-      onChange([...selectedIds, id]);
-    } else {
-      onChange(selectedIds.filter((qid) => qid !== id));
-    }
-  };
-
-  if (sorted.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">No hay trimestres disponibles.</p>
-    );
-  }
-
-  return (
-    <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-border p-3">
-      {sorted.map((quarter) => {
-        const checked = selectedIds.includes(quarter.id);
-        const label = `${quarter.name}`;
-        return (
-          <label
-            key={quarter.id}
-            className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 hover:bg-secondary/50"
-          >
-            <Checkbox
-              checked={checked}
-              onCheckedChange={(value) => toggle(quarter.id, value === true)}
-            />
-            <span className="text-sm text-foreground">{label}</span>
-          </label>
-        );
-      })}
-    </div>
-  );
+function year_to_quarter_ids(year: string, quarters: QuarterModel[]): string[] {
+  if (!year || year === "none") return [];
+  return quarters.filter((q) => q.year === Number(year)).map((q) => q.id);
 }
 
 // Circular progress ring shown in each REMI card header
@@ -459,7 +413,7 @@ export default function REMIsPage() {
   const [new_responsible_user_id, set_new_responsible_user_id] = useState("none");
   const [new_responsible_department_id, set_new_responsible_department_id] = useState("none");
   const [new_remi_progress, set_new_remi_progress] = useState(0);
-  const [new_quarter_ids, set_new_quarter_ids] = useState<string[]>([]);
+  const [new_year, set_new_year] = useState("");
   const [is_saving_remi, set_is_saving_remi] = useState(false);
 
   // ── Edit REMI state ────────────────────────────────────────────────────────
@@ -470,7 +424,7 @@ export default function REMIsPage() {
   const [edit_responsible_user_id, set_edit_responsible_user_id] = useState("none");
   const [edit_responsible_department_id, set_edit_responsible_department_id] = useState("none");
   const [edit_progress, set_edit_progress] = useState(0);
-  const [edit_quarter_ids, set_edit_quarter_ids] = useState<string[]>([]);
+  const [edit_year, set_edit_year] = useState("");
   const [is_saving_edit, set_is_saving_edit] = useState(false);
 
   useEffect(() => {
@@ -492,6 +446,12 @@ export default function REMIsPage() {
     refreshDepartments,
     refreshQuarters,
   ]);
+
+  // ── Available years derived from quarters ─────────────────────────────────
+  const availableYears = useMemo(
+    () => [...new Set(quarters.map((q) => q.year))].sort((a, b) => b - a),
+    [quarters]
+  );
 
   // ── REMIs filtered by selected quarter ────────────────────────────────────
   const filteredRemis = useMemo(() => {
@@ -527,7 +487,7 @@ export default function REMIsPage() {
         responsible_user_id: new_responsible_user_id !== "none" ? new_responsible_user_id : null,
         responsible_department_id: new_responsible_department_id !== "none" ? new_responsible_department_id : null,
         progreso_manual: clamp_remi_progreso_manual(new_remi_progress),
-        quarter_ids: new_quarter_ids,
+        quarter_ids: year_to_quarter_ids(new_year, quarters),
       }),
     })
       .then(() => {
@@ -537,7 +497,7 @@ export default function REMIsPage() {
         set_new_responsible_user_id("none");
         set_new_responsible_department_id("none");
         set_new_remi_progress(0);
-        set_new_quarter_ids([]);
+        set_new_year("");
         return refreshRemis();
       })
       .finally(() => set_is_saving_remi(false));
@@ -550,7 +510,7 @@ export default function REMIsPage() {
     set_edit_responsible_user_id(remi.responsibleUser?.id || "none");
     set_edit_responsible_department_id(remi.responsibleDepartment?.id || "none");
     set_edit_progress(remi.progresoManual ?? 0);
-    set_edit_quarter_ids(remi.quarters?.map((q) => q.id) ?? []);
+    set_edit_year(remi.quarters?.[0]?.year?.toString() ?? "");
     set_is_edit_sheet_open(true);
   };
 
@@ -565,7 +525,7 @@ export default function REMIsPage() {
         responsible_user_id: edit_responsible_user_id !== "none" ? edit_responsible_user_id : null,
         responsible_department_id: edit_responsible_department_id !== "none" ? edit_responsible_department_id : null,
         progreso_manual: clamp_remi_progreso_manual(edit_progress),
-        quarter_ids: edit_quarter_ids,
+        quarter_ids: year_to_quarter_ids(edit_year, quarters),
       }),
     })
       .then(() => {
@@ -681,12 +641,18 @@ export default function REMIsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Trimestres asociados</Label>
-              <QuarterMultiSelect
-                quarters={quarters}
-                selectedIds={new_quarter_ids}
-                onChange={set_new_quarter_ids}
-              />
+              <Label>Año asociado</Label>
+              <Select value={new_year} onValueChange={set_new_year}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sin año (todos los trimestres)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin año</SelectItem>
+                  {availableYears.map((year) => (
+                    <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="pb-2 space-y-2">
               <Label htmlFor="new_remi_progress">Progreso (%)</Label>
@@ -778,12 +744,18 @@ export default function REMIsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Trimestres asociados</Label>
-              <QuarterMultiSelect
-                quarters={quarters}
-                selectedIds={edit_quarter_ids}
-                onChange={set_edit_quarter_ids}
-              />
+              <Label>Año asociado</Label>
+              <Select value={edit_year} onValueChange={set_edit_year}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sin año (todos los trimestres)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin año</SelectItem>
+                  {availableYears.map((year) => (
+                    <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit_progress">Progreso (%)</Label>

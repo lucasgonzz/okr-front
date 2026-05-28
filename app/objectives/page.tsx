@@ -21,7 +21,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useData } from "@/lib/data-context";
 import { calculateObjectiveProgress } from "@/lib/okr-calculations";
 import { ObjectiveForm } from "@/components/okr/objective-form";
-import type { Quarter, ObjectiveStatus, Objective } from "@/lib/types";
+import { KeyResultForm } from "@/components/okr/key-result-form";
+import type { Quarter, ObjectiveStatus, Objective, KeyResult } from "@/lib/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,12 +86,14 @@ function ObjectiveRow({
   index,
   onEdit,
   onDelete,
+  onEditKr,
   isDeleting,
 }: {
   objective: Objective;
   index: number;
   onEdit: (objective: Objective) => void;
   onDelete: (objective: Objective) => void;
+  onEditKr: (kr: KeyResult, objectiveId: string) => void;
   isDeleting: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -316,8 +319,16 @@ function ObjectiveRow({
                   <StatusBadge status={kr.status} size="sm" />
                 </div>
 
-                {/* Acciones (vacío para KRs) */}
-                <div />
+                {/* Acciones KR */}
+                <div className="flex justify-center items-center">
+                  <button
+                    onClick={() => onEditKr(kr, objective.id)}
+                    className="p-1.5 rounded hover:bg-primary/10 transition-all"
+                    title="Editar Key Result"
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                  </button>
+                </div>
               </div>
             ))}
           </motion.div>
@@ -352,6 +363,11 @@ function ObjectivesContent() {
   const [isDeletingObjective, setIsDeletingObjective] = useState(false);
   const [deletingObjectiveId, setDeletingObjectiveId] = useState<string | null>(null);
 
+  // KR edit state
+  const [krFormOpen, setKrFormOpen] = useState(false);
+  const [editingKr, setEditingKr] = useState<KeyResult | null>(null);
+  const [krEditObjectiveId, setKrEditObjectiveId] = useState<string | null>(null);
+
   // Initialize filters from URL params
   const initialDepartment = searchParams.get("department") || "all";
   const initialStatus = searchParams.get("status") || "all";
@@ -383,6 +399,12 @@ function ObjectivesContent() {
   const handleDelete = (objective: Objective) => {
     setObjectiveToDelete(objective);
     setDeleteDialogOpen(true);
+  };
+
+  const handleEditKr = (kr: KeyResult, objectiveId: string) => {
+    setEditingKr(kr);
+    setKrEditObjectiveId(objectiveId);
+    setKrFormOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -718,14 +740,15 @@ function ObjectivesContent() {
                 </div>
               ) : (
                 filteredObjectives.map((objective, index) => (
-                  <ObjectiveRow 
-                        key={objective.id} 
-                        objective={objective} 
-                        index={index}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                  <ObjectiveRow
+                    key={objective.id}
+                    objective={objective}
+                    index={index}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onEditKr={handleEditKr}
                     isDeleting={deletingObjectiveId === objective.id}
-                      />
+                  />
                 ))
               )}
             </div>
@@ -741,6 +764,24 @@ function ObjectivesContent() {
           </p>
         </div>
       </div>
+
+      {/* KR Edit Form */}
+      {krEditObjectiveId && (
+        <KeyResultForm
+          open={krFormOpen}
+          onClose={() => {
+            setKrFormOpen(false);
+            setEditingKr(null);
+            setKrEditObjectiveId(null);
+          }}
+          mode="edit"
+          objectiveId={krEditObjectiveId}
+          keyResult={editingKr ?? undefined}
+          onSuccess={async () => {
+            await refreshObjectives();
+          }}
+        />
+      )}
 
       {/* Objective Form Sheet */}
       <ObjectiveForm
