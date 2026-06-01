@@ -353,6 +353,9 @@ function ObjectivesContent() {
     deleteObjective,
     is_loading,
     refreshObjectives,
+    refreshRemis,
+    refreshUsers,
+    refreshDepartments,
   } = useData();
 
   // CRUD state
@@ -374,6 +377,12 @@ function ObjectivesContent() {
   const initialRemi = searchParams.get("remi") || "all";
 
   const [selectedQuarter, setSelectedQuarter] = useState<Quarter>(selected_quarter as Quarter);
+
+  // Sync local quarter when context resolves the real current quarter on cold load
+  useEffect(() => {
+    setSelectedQuarter(selected_quarter as Quarter);
+  }, [selected_quarter]);
+
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState<ObjectiveStatus | "all">(
     initialStatus === "en-riesgo" || initialStatus === "completado"
@@ -389,6 +398,13 @@ function ObjectivesContent() {
     if (pathname !== "/objectives" || quarters.length === 0) return;
     void refreshObjectives();
   }, [pathname, quarters, refreshObjectives]);
+
+  // Load supporting data on cold load if not already in context
+  useEffect(() => {
+    if (remis.length === 0) void refreshRemis();
+    if (users.length === 0) void refreshUsers();
+    if (departments.length === 0) void refreshDepartments();
+  }, [refreshRemis, refreshUsers, refreshDepartments]);
 
   // CRUD handlers
   const handleEdit = (objective: Objective) => {
