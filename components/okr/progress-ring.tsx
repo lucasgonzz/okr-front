@@ -29,12 +29,11 @@ export function ProgressRing({
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (value / 100) * circumference;
 
-  // Color based on progress
-  const getColor = () => {
-    if (value >= 80) return "stroke-success";
-    if (value >= 60) return "stroke-primary";
-    if (value >= 40) return "stroke-warning";
-    return "stroke-destructive";
+  // Color based on progress — uses CSS vars inline to avoid framer-motion className conflicts on SVG
+  const getStrokeColor = (): string => {
+    if (value >= 80) return "var(--success)";
+    if (value >= 51) return "#f59e0b";
+    return "var(--destructive)";
   };
 
   return (
@@ -62,12 +61,12 @@ export function ProgressRing({
           fill="none"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
-          className={getColor()}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 1, ease: "easeOut" }}
           style={{
             strokeDasharray: circumference,
+            stroke: getStrokeColor(),
           }}
         />
       </svg>

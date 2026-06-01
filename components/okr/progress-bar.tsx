@@ -21,16 +21,16 @@ const sizeClasses = {
 
 const getVariant = (value: number, variant?: ProgressBarProps["variant"]) => {
   if (variant) return variant;
-  if (value >= 70) return "success";
-  if (value >= 40) return "warning";
+  if (value >= 80) return "success";
+  if (value >= 51) return "warning";
   return "danger";
 };
 
-const variantClasses = {
-  default: "bg-primary",
-  success: "bg-success",
-  warning: "bg-warning",
-  danger: "bg-destructive",
+const variantColors: Record<string, string> = {
+  default: "var(--primary)",
+  success: "var(--success)",
+  warning: "#f59e0b",
+  danger: "var(--destructive)",
 };
 
 export function ProgressBar({
@@ -44,6 +44,7 @@ export function ProgressBar({
 }: ProgressBarProps) {
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
   const computedVariant = getVariant(percentage, variant);
+  const barColor = variantColors[computedVariant];
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
@@ -55,21 +56,16 @@ export function ProgressBar({
       >
         {animated ? (
           <motion.div
-            className={cn(
-              "absolute inset-y-0 left-0 rounded-full",
-              variantClasses[computedVariant]
-            )}
+            className="absolute inset-y-0 left-0 rounded-full"
+            style={{ backgroundColor: barColor }}
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           />
         ) : (
           <div
-            className={cn(
-              "absolute inset-y-0 left-0 rounded-full",
-              variantClasses[computedVariant]
-            )}
-            style={{ width: `${percentage}%` }}
+            className="absolute inset-y-0 left-0 rounded-full"
+            style={{ width: `${percentage}%`, backgroundColor: barColor }}
           />
         )}
       </div>

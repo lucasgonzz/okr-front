@@ -75,14 +75,14 @@ function ProgressRing({ progress }: { progress: number }) {
   const offset = circumference * (1 - safeProgress / 100);
 
   const strokeColor =
-    safeProgress >= 70 ? "#22c55e" :
-    safeProgress >= 30 ? "#f59e0b" :
+    safeProgress >= 80 ? "#22c55e" :
+    safeProgress >= 51 ? "#f59e0b" :
     safeProgress === 0 ? undefined :
     "#ef4444";
 
   const textColor =
-    safeProgress >= 70 ? "text-emerald-500" :
-    safeProgress >= 30 ? "text-amber-500" :
+    safeProgress >= 80 ? "text-emerald-500" :
+    safeProgress >= 51 ? "text-amber-500" :
     safeProgress === 0 ? "text-muted-foreground" :
     "text-red-500";
 

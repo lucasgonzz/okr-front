@@ -368,20 +368,20 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/15">
-                    <Users className="h-6 w-6 text-primary" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/15 lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <Users className="h-6 w-6 text-primary lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {totalUsers}
                     </p>
                     <p className="text-sm text-muted-foreground">Total Usuarios</p>
@@ -397,13 +397,13 @@ export default function AdminPage() {
             transition={{ duration: 0.4, delay: 0.05 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-info/15">
-                    <Shield className="h-6 w-6 text-info" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-info/15 lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <Shield className="h-6 w-6 text-info lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {adminCount}
                     </p>
                     <p className="text-sm text-muted-foreground">Administradores</p>
@@ -419,13 +419,13 @@ export default function AdminPage() {
             transition={{ duration: 0.4, delay: 0.1 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-                    <UserIcon className="h-6 w-6 text-muted-foreground" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <UserIcon className="h-6 w-6 text-muted-foreground lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {userCount}
                     </p>
                     <p className="text-sm text-muted-foreground">Usuarios</p>
@@ -441,13 +441,13 @@ export default function AdminPage() {
             transition={{ duration: 0.4, delay: 0.15 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-                    <Building2 className="h-6 w-6 text-muted-foreground" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <Building2 className="h-6 w-6 text-muted-foreground lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {departments.length}
                     </p>
                     <p className="text-sm text-muted-foreground">Departamentos</p>
