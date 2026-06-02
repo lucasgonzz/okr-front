@@ -9,6 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -23,20 +32,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
-import type { Quarter, User } from "@/lib/types";
+import type { Quarter, User, Department } from "@/lib/types";
 import {
   Users,
   Building2,
@@ -45,8 +46,20 @@ import {
   Plus,
   Search,
   Pencil,
-  MoreHorizontal,
 } from "lucide-react";
+
+const DEPARTMENT_COLORS = [
+  { name: "Terracota", hex: "#C0785A" },
+  { name: "Azul marino", hex: "#3B5278" },
+  { name: "Salvia", hex: "#7A9E87" },
+  { name: "Ciruela", hex: "#7D5A7A" },
+  { name: "Mostaza", hex: "#C9A84C" },
+  { name: "Pizarra", hex: "#6B7A8D" },
+  { name: "Coral suave", hex: "#D4856A" },
+  { name: "Verde musgo", hex: "#5C7A5C" },
+  { name: "Arena", hex: "#B5A48B" },
+  { name: "Borgoña", hex: "#7A3B4B" },
+];
 
 type EditUserForm = {
   name: string;
@@ -89,6 +102,17 @@ export default function AdminPage() {
     role: "user",
     password: "",
   });
+
+  // Department create/edit state
+  const [isCreateDeptOpen, setIsCreateDeptOpen] = useState(false);
+  const [isCreatingDept, setIsCreatingDept] = useState(false);
+  const [newDeptName, setNewDeptName] = useState("");
+  const [newDeptColor, setNewDeptColor] = useState(DEPARTMENT_COLORS[0].hex);
+  const [editDeptTarget, setEditDeptTarget] = useState<Department | null>(null);
+  const [isEditDeptOpen, setIsEditDeptOpen] = useState(false);
+  const [isSavingDept, setIsSavingDept] = useState(false);
+  const [editDeptName, setEditDeptName] = useState("");
+  const [editDeptColor, setEditDeptColor] = useState(DEPARTMENT_COLORS[0].hex);
 
   useEffect(() => {
     void Promise.all([refreshUsers(), refreshDepartments()]);
@@ -274,6 +298,50 @@ export default function AdminPage() {
   const isEditingSelf =
     !!authUser?.id && !!editUserTarget?.id && authUser.id === editUserTarget.id;
 
+  const handleCreateDept = () => {
+    if (!newDeptName.trim()) return;
+    setIsCreatingDept(true);
+    apiFetch("/departments", {
+      method: "POST",
+      body: JSON.stringify({ name: newDeptName.trim(), color: newDeptColor }),
+    })
+      .then(() => {
+        setIsCreateDeptOpen(false);
+        setNewDeptName("");
+        setNewDeptColor(DEPARTMENT_COLORS[0].hex);
+        return refreshDepartments();
+      })
+      .finally(() => setIsCreatingDept(false));
+  };
+
+  const openEditDept = (dept: Department) => {
+    setEditDeptTarget(dept);
+    setEditDeptName(dept.name);
+    setEditDeptColor(dept.color);
+    setIsEditDeptOpen(true);
+  };
+
+  const handleEditDept = () => {
+    if (!editDeptTarget || !editDeptName.trim()) return;
+    setIsSavingDept(true);
+    apiFetch(`/departments/${editDeptTarget.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ name: editDeptName.trim(), color: editDeptColor }),
+    })
+      .then(() => {
+        setIsEditDeptOpen(false);
+        return refreshDepartments();
+      })
+      .catch((error) => {
+        toast({
+          title: "No se pudo guardar",
+          description: error instanceof Error ? error.message : "Ocurrió un error inesperado.",
+          variant: "destructive",
+        });
+      })
+      .finally(() => setIsSavingDept(false));
+  };
+
   return (
     <AppShell
       selectedQuarter={selectedQuarter}
@@ -300,20 +368,20 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/15">
-                    <Users className="h-6 w-6 text-primary" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/15 lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <Users className="h-6 w-6 text-primary lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {totalUsers}
                     </p>
                     <p className="text-sm text-muted-foreground">Total Usuarios</p>
@@ -329,13 +397,13 @@ export default function AdminPage() {
             transition={{ duration: 0.4, delay: 0.05 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-info/15">
-                    <Shield className="h-6 w-6 text-info" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-info/15 lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <Shield className="h-6 w-6 text-info lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {adminCount}
                     </p>
                     <p className="text-sm text-muted-foreground">Administradores</p>
@@ -351,13 +419,13 @@ export default function AdminPage() {
             transition={{ duration: 0.4, delay: 0.1 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-                    <UserIcon className="h-6 w-6 text-muted-foreground" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <UserIcon className="h-6 w-6 text-muted-foreground lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {userCount}
                     </p>
                     <p className="text-sm text-muted-foreground">Usuarios</p>
@@ -373,13 +441,13 @@ export default function AdminPage() {
             transition={{ duration: 0.4, delay: 0.15 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-                    <Building2 className="h-6 w-6 text-muted-foreground" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <Building2 className="h-6 w-6 text-muted-foreground lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {departments.length}
                     </p>
                     <p className="text-sm text-muted-foreground">Departamentos</p>
@@ -412,9 +480,9 @@ export default function AdminPage() {
                       if (!open) resetCreateUserForm();
                     }}
                   >
-                  <Button size="sm" className="gap-2" onClick={() => setIsCreateUserOpen(true)}>
+                  <Button size="sm" className="gap-1.5" onClick={() => setIsCreateUserOpen(true)}>
                     <Plus className="h-4 w-4" />
-                    Crear Usuario
+                    Crear
                   </Button>
                   <SheetContent side="right" className="sm:max-w-md">
                     <SheetHeader>
@@ -675,8 +743,8 @@ export default function AdminPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm font-medium text-foreground truncate">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1">
+                            <p className="text-sm font-medium text-foreground">
                               {user.name}
                             </p>
                             <Badge
@@ -715,7 +783,7 @@ export default function AdminPage() {
             </Card>
           </motion.div>
 
-          {/* Right Column - Departments & Org Structure */}
+          {/* Right Column - Departments */}
           <div className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -723,11 +791,15 @@ export default function AdminPage() {
               transition={{ duration: 0.4, delay: 0.25 }}
             >
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    Departamentos
+                <CardHeader className="flex flex-row items-center justify-between gap-2">
+                  <CardTitle className="flex min-w-0 items-center gap-2 text-sm">
+                    <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                    <span className="truncate">Departamentos</span>
                   </CardTitle>
+                  <Button size="sm" className="flex-shrink-0 gap-1.5" onClick={() => setIsCreateDeptOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                    Crear
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -737,7 +809,7 @@ export default function AdminPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: 0.3 + index * 0.03 }}
-                        className="group flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
+                        className="group flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors"
                       >
                         <div
                           className="h-3 w-3 rounded-full flex-shrink-0"
@@ -748,6 +820,16 @@ export default function AdminPage() {
                             {dept.name}
                           </p>
                         </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => openEditDept(dept)}
+                          aria-label="Editar departamento"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
                       </motion.div>
                     ))}
                   </div>
@@ -757,82 +839,135 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Department Assignment Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
-          className="mt-6"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                Detalles de Departamentos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto w-full">
-              <Table className="min-w-[760px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Departamento</TableHead>
-                    <TableHead>Responsable</TableHead>
-                    <TableHead className="text-center">Miembros</TableHead>
-                    <TableHead className="text-center">Objetivos</TableHead>
-                    <TableHead className="text-center">Progreso Prom.</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {departments.map((dept) => (
-                    <TableRow key={dept.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: dept.color }}
-                          />
-                          <span className="font-medium">{dept.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {dept.head ? (
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="text-xs">
-                                {dept.head.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{dept.head.name}</span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {users.filter((user) => user.departmentId === dept.id).length}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        —
-                      </TableCell>
-                      <TableCell className="text-center">
-                        —
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
+
+      {/* Create Department Dialog */}
+      <Dialog open={isCreateDeptOpen} onOpenChange={setIsCreateDeptOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuevo departamento</DialogTitle>
+            <DialogDescription>
+              Crea un nuevo departamento para usarlo en objetivos y responsables.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="admin_dept_name">Nombre</Label>
+              <Input
+                id="admin_dept_name"
+                value={newDeptName}
+                onChange={(e) => setNewDeptName(e.target.value)}
+                placeholder="Ej: Finanzas"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin_dept_color">Color</Label>
+              <Select value={newDeptColor} onValueChange={setNewDeptColor}>
+                <SelectTrigger id="admin_dept_color" className="w-full">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-4 w-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: newDeptColor }}
+                    />
+                    <span className="text-sm">
+                      {DEPARTMENT_COLORS.find((c) => c.hex === newDeptColor)?.name}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {DEPARTMENT_COLORS.map((color) => (
+                    <SelectItem key={color.hex} value={color.hex}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-4 w-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <span>{color.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDeptOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCreateDept}
+              disabled={isCreatingDept || !newDeptName.trim()}
+            >
+              {isCreatingDept ? <Spinner className="mr-2 h-4 w-4" /> : null}
+              {isCreatingDept ? "Creando..." : "Crear"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Department Dialog */}
+      <Dialog open={isEditDeptOpen} onOpenChange={setIsEditDeptOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar departamento</DialogTitle>
+            <DialogDescription>
+              Modificá el nombre y el color del departamento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="admin_edit_dept_name">Nombre</Label>
+              <Input
+                id="admin_edit_dept_name"
+                value={editDeptName}
+                onChange={(e) => setEditDeptName(e.target.value)}
+                placeholder="Nombre del departamento"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin_edit_dept_color">Color</Label>
+              <Select value={editDeptColor} onValueChange={setEditDeptColor}>
+                <SelectTrigger id="admin_edit_dept_color" className="w-full">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-4 w-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: editDeptColor }}
+                    />
+                    <span className="text-sm">
+                      {DEPARTMENT_COLORS.find((c) => c.hex === editDeptColor)?.name}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {DEPARTMENT_COLORS.map((color) => (
+                    <SelectItem key={color.hex} value={color.hex}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-4 w-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <span>{color.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDeptOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleEditDept}
+              disabled={isSavingDept || !editDeptName.trim()}
+            >
+              {isSavingDept ? <Spinner className="mr-2 h-4 w-4" /> : null}
+              {isSavingDept ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
