@@ -28,7 +28,8 @@ import {
 import { canManageDepartmentResource } from "@/lib/permissions";
 import { calculateObjectiveProgress } from "@/lib/okr-calculations";
 import { ObjectiveForm } from "@/components/okr/objective-form";
-import type { Quarter, ObjectiveStatus, Objective } from "@/lib/types";
+import { KeyResultForm } from "@/components/okr/key-result-form";
+import type { Quarter, ObjectiveStatus, Objective, KeyResult } from "@/lib/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,19 +57,17 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Progress color based on percentage
+// Progress color based on percentage — returns color values for inline style
 function getProgressColor(progress: number): string {
-  if (progress >= 100) return "bg-success";
-  if (progress >= 60) return "bg-warning";
-  if (progress >= 1) return "bg-destructive";
-  return "bg-destructive/80";
+  if (progress >= 80) return "var(--success)";
+  if (progress >= 51) return "#f59e0b";
+  return "var(--destructive)";
 }
 
 function getProgressTextColor(progress: number): string {
-  if (progress >= 100) return "text-success";
-  if (progress >= 60) return "text-warning";
-  if (progress >= 1) return "text-destructive";
-  return "text-destructive";
+  if (progress >= 80) return "var(--success)";
+  if (progress >= 51) return "#f59e0b";
+  return "var(--destructive)";
 }
 
 // Format value with unit
@@ -92,6 +91,7 @@ function ObjectiveRow({
   index,
   onEdit,
   onDelete,
+  onEditKr,
   isDeleting,
   canManage,
 }: {
@@ -99,6 +99,7 @@ function ObjectiveRow({
   index: number;
   onEdit: (objective: Objective) => void;
   onDelete: (objective: Objective) => void;
+  onEditKr: (kr: KeyResult, objectiveId: string) => void;
   isDeleting: boolean;
   canManage: boolean;
 }) {
@@ -173,13 +174,14 @@ function ObjectiveRow({
         <div className="flex justify-center items-center gap-2">
           <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
             <motion.div
-              className={cn("h-full rounded-full", getProgressColor(calculated.progress))}
+              className="h-full rounded-full"
+              style={{ backgroundColor: getProgressColor(calculated.progress) }}
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(calculated.progress, 100)}%` }}
               transition={{ duration: 0.5, delay: index * 0.02 }}
             />
           </div>
-          <span className={cn("text-sm font-semibold w-10 text-right", getProgressTextColor(calculated.progress))}>
+          <span className="text-sm font-semibold w-10 text-right" style={{ color: getProgressTextColor(calculated.progress) }}>
             {calculated.progress}%
           </span>
         </div>
@@ -293,7 +295,7 @@ function ObjectiveRow({
                 </div>
 
                 {/* Current */}
-                <div className={cn("text-sm font-medium text-center", getProgressTextColor(kr.progress))}>
+                <div className="text-sm font-medium text-center" style={{ color: getProgressTextColor(kr.progress) }}>
                   {formatValue(kr.currentValue, kr.unit)}
                 </div>
 
@@ -301,13 +303,14 @@ function ObjectiveRow({
                 <div className="flex justify-center items-center gap-2">
                   <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                     <motion.div
-                      className={cn("h-full rounded-full", getProgressColor(kr.progress))}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: getProgressColor(kr.progress) }}
                       initial={{ width: 0 }}
                       animate={{ width: `${Math.min(kr.progress, 100)}%` }}
                       transition={{ duration: 0.4, delay: krIndex * 0.03 }}
                     />
                   </div>
-                  <span className={cn("text-xs font-medium w-8 text-right", getProgressTextColor(kr.progress))}>
+                  <span className="text-xs font-medium w-8 text-right" style={{ color: getProgressTextColor(kr.progress) }}>
                     {kr.progress}%
                   </span>
                 </div>
@@ -329,8 +332,16 @@ function ObjectiveRow({
                   <StatusBadge status={kr.status} size="sm" />
                 </div>
 
-                {/* Acciones (vacío para KRs) */}
-                <div />
+                {/* Acciones KR */}
+                <div className="flex justify-center items-center">
+                  <button
+                    onClick={() => onEditKr(kr, objective.id)}
+                    className="p-1.5 rounded hover:bg-primary/10 transition-all"
+                    title="Editar Key Result"
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                  </button>
+                </div>
               </div>
             ))}
           </motion.div>
@@ -356,6 +367,9 @@ function ObjectivesContent() {
     deleteObjective,
     is_loading,
     refreshObjectives,
+    refreshRemis,
+    refreshUsers,
+    refreshDepartments,
   } = useData();
 
   // CRUD state
@@ -366,12 +380,23 @@ function ObjectivesContent() {
   const [isDeletingObjective, setIsDeletingObjective] = useState(false);
   const [deletingObjectiveId, setDeletingObjectiveId] = useState<string | null>(null);
 
+  // KR edit state
+  const [krFormOpen, setKrFormOpen] = useState(false);
+  const [editingKr, setEditingKr] = useState<KeyResult | null>(null);
+  const [krEditObjectiveId, setKrEditObjectiveId] = useState<string | null>(null);
+
   // Initialize filters from URL params
   const initialDepartment = searchParams.get("department") || "all";
   const initialStatus = searchParams.get("status") || "all";
   const initialRemi = searchParams.get("remi") || "all";
 
   const [selectedQuarter, setSelectedQuarter] = useState<Quarter>(selected_quarter as Quarter);
+
+  // Sync local quarter when context resolves the real current quarter on cold load
+  useEffect(() => {
+    setSelectedQuarter(selected_quarter as Quarter);
+  }, [selected_quarter]);
+
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState<ObjectiveStatus | "all">(
     initialStatus === "en-riesgo" || initialStatus === "completado"
@@ -393,6 +418,13 @@ function ObjectivesContent() {
     void refreshObjectives();
   }, [pathname, quarters, refreshObjectives]);
 
+  // Load supporting data on cold load if not already in context
+  useEffect(() => {
+    if (remis.length === 0) void refreshRemis();
+    if (users.length === 0) void refreshUsers();
+    if (departments.length === 0) void refreshDepartments();
+  }, [refreshRemis, refreshUsers, refreshDepartments]);
+
   // CRUD handlers
   const handleEdit = (objective: Objective) => {
     setEditingObjective(objective);
@@ -402,6 +434,12 @@ function ObjectivesContent() {
   const handleDelete = (objective: Objective) => {
     setObjectiveToDelete(objective);
     setDeleteDialogOpen(true);
+  };
+
+  const handleEditKr = (kr: KeyResult, objectiveId: string) => {
+    setEditingKr(kr);
+    setKrEditObjectiveId(objectiveId);
+    setKrFormOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -746,17 +784,18 @@ function ObjectivesContent() {
               ) : (
                 filteredObjectives.map((objective, index) => (
                   <ObjectiveRow
-                        key={objective.id}
-                        objective={objective}
-                        index={index}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                    key={objective.id}
+                    objective={objective}
+                    index={index}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onEditKr={handleEditKr}
                     isDeleting={deletingObjectiveId === objective.id}
                     canManage={canManageDepartmentResource(
                       user,
                       objectiveDepartmentId(objective.department)
                     )}
-                      />
+                  />
                 ))
               )}
             </div>
@@ -772,6 +811,24 @@ function ObjectivesContent() {
           </p>
         </div>
       </div>
+
+      {/* KR Edit Form */}
+      {krEditObjectiveId && (
+        <KeyResultForm
+          open={krFormOpen}
+          onClose={() => {
+            setKrFormOpen(false);
+            setEditingKr(null);
+            setKrEditObjectiveId(null);
+          }}
+          mode="edit"
+          objectiveId={krEditObjectiveId}
+          keyResult={editingKr ?? undefined}
+          onSuccess={async () => {
+            await refreshObjectives();
+          }}
+        />
+      )}
 
       {/* Objective Form Sheet */}
       <ObjectiveForm

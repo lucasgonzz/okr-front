@@ -26,7 +26,6 @@ export interface User {
 export interface Department {
   id: string;
   name: string;
-  slug: string;
   color: string;
   companyId?: string;
   /** Presente en mock; la API /departments no lo envía aún. */

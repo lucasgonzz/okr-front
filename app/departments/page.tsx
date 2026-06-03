@@ -20,6 +20,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import type { Quarter } from "@/lib/types";
 import {
   Target,
@@ -27,6 +33,19 @@ import {
   ChevronRight,
   Plus,
 } from "lucide-react";
+
+const DEPARTMENT_COLORS = [
+  { name: "Terracota", hex: "#C0785A" },
+  { name: "Azul marino", hex: "#3B5278" },
+  { name: "Salvia", hex: "#7A9E87" },
+  { name: "Ciruela", hex: "#7D5A7A" },
+  { name: "Mostaza", hex: "#C9A84C" },
+  { name: "Pizarra", hex: "#6B7A8D" },
+  { name: "Coral suave", hex: "#D4856A" },
+  { name: "Verde musgo", hex: "#5C7A5C" },
+  { name: "Arena", hex: "#B5A48B" },
+  { name: "Borgoña", hex: "#7A3B4B" },
+];
 
 export default function DepartmentsPage() {
   const {
@@ -41,8 +60,7 @@ export default function DepartmentsPage() {
   const [selectedQuarter, setSelectedQuarter] = useState<Quarter>(selected_quarter as Quarter);
   const [is_create_modal_open, set_is_create_modal_open] = useState(false);
   const [new_department_name, set_new_department_name] = useState("");
-  const [new_department_slug, set_new_department_slug] = useState("");
-  const [new_department_color, set_new_department_color] = useState("#6366F1");
+  const [new_department_color, set_new_department_color] = useState(DEPARTMENT_COLORS[0].hex);
   const [is_saving_department, set_is_saving_department] = useState(false);
 
   useEffect(() => {
@@ -88,15 +106,13 @@ export default function DepartmentsPage() {
       method: "POST",
       body: JSON.stringify({
         name: new_department_name.trim(),
-        slug: new_department_slug.trim() || undefined,
         color: new_department_color,
       }),
     })
       .then(() => {
         set_is_create_modal_open(false);
         set_new_department_name("");
-        set_new_department_slug("");
-        set_new_department_color("#6366F1");
+        set_new_department_color(DEPARTMENT_COLORS[0].hex);
         return refreshDepartments();
       })
       .finally(() => {
@@ -242,22 +258,33 @@ export default function DepartmentsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="department_slug">Slug</Label>
-              <Input
-                id="department_slug"
-                value={new_department_slug}
-                onChange={(event) => set_new_department_slug(event.target.value)}
-                placeholder="finanzas"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="department_color">Color</Label>
-              <Input
-                id="department_color"
-                value={new_department_color}
-                onChange={(event) => set_new_department_color(event.target.value)}
-                placeholder="#6366F1"
-              />
+              <Select value={new_department_color} onValueChange={set_new_department_color}>
+                <SelectTrigger id="department_color" className="w-full">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-4 w-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: new_department_color }}
+                    />
+                    <span className="text-sm">
+                      {DEPARTMENT_COLORS.find((c) => c.hex === new_department_color)?.name}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {DEPARTMENT_COLORS.map((color) => (
+                    <SelectItem key={color.hex} value={color.hex}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-4 w-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <span>{color.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

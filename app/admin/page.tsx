@@ -9,6 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -23,14 +31,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api";
@@ -506,20 +506,20 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/15">
-                    <Users className="h-6 w-6 text-primary" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/15 lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <Users className="h-6 w-6 text-primary lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {totalUsers}
                     </p>
                     <p className="text-sm text-muted-foreground">Total Usuarios</p>
@@ -535,13 +535,13 @@ export default function AdminPage() {
             transition={{ duration: 0.4, delay: 0.05 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-info/15">
-                    <Shield className="h-6 w-6 text-info" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-info/15 lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <Shield className="h-6 w-6 text-info lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {adminCount}
                     </p>
                     <p className="text-sm text-muted-foreground">Administradores</p>
@@ -557,13 +557,13 @@ export default function AdminPage() {
             transition={{ duration: 0.4, delay: 0.1 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-                    <UserIcon className="h-6 w-6 text-muted-foreground" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <UserIcon className="h-6 w-6 text-muted-foreground lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {userCount}
                     </p>
                     <p className="text-sm text-muted-foreground">Usuarios</p>
@@ -579,13 +579,13 @@ export default function AdminPage() {
             transition={{ duration: 0.4, delay: 0.15 }}
           >
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-                    <Building2 className="h-6 w-6 text-muted-foreground" />
+              <CardContent className="pt-6 lg:px-4 xl:px-6">
+                <div className="flex items-center gap-4 lg:gap-2 xl:gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary lg:h-10 lg:w-10 xl:h-12 xl:w-12">
+                    <Building2 className="h-6 w-6 text-muted-foreground lg:h-5 lg:w-5 xl:h-6 xl:w-6" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-semibold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold text-foreground lg:text-xl xl:text-2xl">
                       {departments.length}
                     </p>
                     <p className="text-sm text-muted-foreground">Departamentos</p>
@@ -618,9 +618,9 @@ export default function AdminPage() {
                       if (!open) resetCreateUserForm();
                     }}
                   >
-                  <Button size="sm" className="gap-2" onClick={() => setIsCreateUserOpen(true)}>
+                  <Button size="sm" className="gap-1.5" onClick={() => setIsCreateUserOpen(true)}>
                     <Plus className="h-4 w-4" />
-                    Crear Usuario
+                    Crear
                   </Button>
                   <SheetContent side="right" className="sm:max-w-md">
                     <SheetHeader>
@@ -908,8 +908,8 @@ export default function AdminPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm font-medium text-foreground truncate">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1">
+                            <p className="text-sm font-medium text-foreground">
                               {user.name}
                             </p>
                             <Badge
@@ -965,7 +965,7 @@ export default function AdminPage() {
             </Card>
           </motion.div>
 
-          {/* Right Column - Departments & Org Structure */}
+          {/* Right Column - Departments */}
           <div className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -973,15 +973,15 @@ export default function AdminPage() {
               transition={{ duration: 0.4, delay: 0.25 }}
             >
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    Departamentos
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+                  <CardTitle className="flex min-w-0 items-center gap-2 text-sm">
+                    <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                    <span className="truncate">Departamentos</span>
                   </CardTitle>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="gap-1 h-8"
+                    className="h-8 flex-shrink-0 gap-1"
                     onClick={() => setIsCreateDeptOpen(true)}
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -998,7 +998,7 @@ export default function AdminPage() {
                         transition={{ duration: 0.3, delay: 0.3 + index * 0.03 }}
                         role="button"
                         tabIndex={0}
-                        className="group flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
+                        className="group flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-secondary/50"
                         onClick={() => void openEditDepartment(dept)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
@@ -1016,7 +1016,7 @@ export default function AdminPage() {
                             {dept.name}
                           </p>
                         </div>
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                           <Button
                             type="button"
                             variant="ghost"
