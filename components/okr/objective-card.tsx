@@ -5,6 +5,10 @@ import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "./status-badge";
 import { ProgressBar } from "./progress-bar";
+import {
+  objectiveDepartmentColor,
+  objectiveDepartmentName,
+} from "@/lib/objective-department";
 import type { Objective } from "@/lib/types";
 import { Calendar, Target, MessageSquare, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
@@ -39,10 +43,10 @@ export function ObjectiveCard({
           <div className="flex items-center gap-2 mb-2">
             <span
               className="h-2 w-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: objective.department.color }}
+              style={{ backgroundColor: objectiveDepartmentColor(objective.department) }}
             />
             <span className="text-xs font-medium text-muted-foreground truncate">
-              {objective.department.name}
+              {objectiveDepartmentName(objective.department)}
             </span>
           </div>
           <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">

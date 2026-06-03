@@ -36,7 +36,17 @@ import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
-import type { Quarter, User } from "@/lib/types";
+import type { Department, Quarter, User } from "@/lib/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Users,
   Building2,
@@ -45,7 +55,8 @@ import {
   Plus,
   Search,
   Pencil,
-  MoreHorizontal,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 
 type EditUserForm = {
@@ -54,6 +65,11 @@ type EditUserForm = {
   departmentId: string;
   role: "admin" | "user";
   password: string;
+};
+
+type DepartmentForm = {
+  name: string;
+  color: string;
 };
 
 export default function AdminPage() {
@@ -72,6 +88,7 @@ export default function AdminPage() {
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [newUserForm, setNewUserForm] = useState({
+    name: "",
     departmentId: "",
     role: "user" as "admin" | "user",
     email: "",
@@ -89,6 +106,28 @@ export default function AdminPage() {
     role: "user",
     password: "",
   });
+
+  const [deleteUserTarget, setDeleteUserTarget] = useState<User | null>(null);
+  const [deleteUserLoading, setDeleteUserLoading] = useState(false);
+
+  const [isCreateDeptOpen, setIsCreateDeptOpen] = useState(false);
+  const [isCreatingDept, setIsCreatingDept] = useState(false);
+  const [createDeptForm, setCreateDeptForm] = useState<DepartmentForm>({
+    name: "",
+    color: "#6366F1",
+  });
+
+  const [editDeptTarget, setEditDeptTarget] = useState<Department | null>(null);
+  const [isEditDeptOpen, setIsEditDeptOpen] = useState(false);
+  const [editDeptLoading, setEditDeptLoading] = useState(false);
+  const [editDeptSaving, setEditDeptSaving] = useState(false);
+  const [editDeptForm, setEditDeptForm] = useState<DepartmentForm>({
+    name: "",
+    color: "#6366F1",
+  });
+
+  const [deleteDeptTarget, setDeleteDeptTarget] = useState<Department | null>(null);
+  const [deleteDeptLoading, setDeleteDeptLoading] = useState(false);
 
   useEffect(() => {
     void Promise.all([refreshUsers(), refreshDepartments()]);
@@ -124,6 +163,7 @@ export default function AdminPage() {
 
   const resetCreateUserForm = () => {
     setNewUserForm({
+      name: "",
       departmentId: "",
       role: "user",
       email: "",
@@ -134,27 +174,31 @@ export default function AdminPage() {
   const handleCreateUser = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!newUserForm.departmentId || !newUserForm.email || !newUserForm.password) {
+    if (
+      !newUserForm.name.trim() ||
+      !newUserForm.departmentId ||
+      !newUserForm.email ||
+      !newUserForm.password
+    ) {
       toast({
         title: "Campos incompletos",
-        description: "Completá departamento, email y password.",
+        description: "Completá nombre, departamento, email y contraseña.",
         variant: "destructive",
       });
       return;
     }
 
     setIsCreatingUser(true);
-    const inferredName = newUserForm.email.split("@")[0] || "Nuevo usuario";
 
     try {
       await apiFetch<{ user: unknown }>("/users", {
         method: "POST",
         body: JSON.stringify({
+          name: newUserForm.name.trim(),
           department_id: newUserForm.departmentId,
           role: newUserForm.role,
           email: newUserForm.email,
           password: newUserForm.password,
-          name: inferredName,
         }),
       });
 
@@ -268,6 +312,168 @@ export default function AdminPage() {
       });
     } finally {
       setEditUserSaving(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUserTarget) return;
+    setDeleteUserLoading(true);
+    try {
+      await apiFetch(`/users/${deleteUserTarget.id}`, { method: "DELETE" });
+      await refreshUsers();
+      if (editUserTarget?.id === deleteUserTarget.id) {
+        closeEditUserSheet();
+      }
+      setDeleteUserTarget(null);
+      toast({
+        title: "Usuario eliminado",
+        description: `${deleteUserTarget.name} fue eliminado correctamente.`,
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo eliminar el usuario",
+        description: error instanceof Error ? error.message : "Ocurrió un error inesperado.",
+        variant: "destructive",
+      });
+      setDeleteUserTarget(null);
+    } finally {
+      setDeleteUserLoading(false);
+    }
+  };
+
+  const resetCreateDeptForm = () => {
+    setCreateDeptForm({ name: "", color: "#6366F1" });
+  };
+
+  const handleCreateDepartment = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!createDeptForm.name.trim()) {
+      toast({
+        title: "Nombre requerido",
+        description: "Ingresá un nombre para el departamento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingDept(true);
+    try {
+      await apiFetch("/departments", {
+        method: "POST",
+        body: JSON.stringify({
+          name: createDeptForm.name.trim(),
+          color: createDeptForm.color,
+        }),
+      });
+      await refreshDepartments();
+      setIsCreateDeptOpen(false);
+      resetCreateDeptForm();
+      toast({
+        title: "Departamento creado",
+        description: "El departamento se agregó a tu empresa.",
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo crear el departamento",
+        description: error instanceof Error ? error.message : "Ocurrió un error inesperado.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingDept(false);
+    }
+  };
+
+  const closeEditDeptSheet = () => {
+    setIsEditDeptOpen(false);
+    setEditDeptTarget(null);
+    setEditDeptForm({ name: "", color: "#6366F1" });
+  };
+
+  const openEditDepartment = async (dept: Department) => {
+    setEditDeptTarget(dept);
+    setIsEditDeptOpen(true);
+    setEditDeptLoading(true);
+    setEditDeptForm({ name: dept.name, color: dept.color });
+    try {
+      const res = await apiFetch<{ department: Department }>(`/departments/${dept.id}`);
+      setEditDeptForm({
+        name: res.department.name,
+        color: res.department.color,
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo cargar el departamento",
+        description: error instanceof Error ? error.message : "Intentá de nuevo.",
+        variant: "destructive",
+      });
+      closeEditDeptSheet();
+    } finally {
+      setEditDeptLoading(false);
+    }
+  };
+
+  const handleEditDepartmentSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editDeptTarget) return;
+
+    if (!editDeptForm.name.trim()) {
+      toast({
+        title: "Nombre requerido",
+        description: "El nombre del departamento no puede estar vacío.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setEditDeptSaving(true);
+    try {
+      await apiFetch(`/departments/${editDeptTarget.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: editDeptForm.name.trim(),
+          color: editDeptForm.color,
+        }),
+      });
+      await refreshDepartments();
+      closeEditDeptSheet();
+      toast({
+        title: "Departamento actualizado",
+        description: "Los cambios se guardaron correctamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo guardar",
+        description: error instanceof Error ? error.message : "Ocurrió un error inesperado.",
+        variant: "destructive",
+      });
+    } finally {
+      setEditDeptSaving(false);
+    }
+  };
+
+  const handleDeleteDepartment = async () => {
+    if (!deleteDeptTarget) return;
+    setDeleteDeptLoading(true);
+    try {
+      await apiFetch(`/departments/${deleteDeptTarget.id}`, { method: "DELETE" });
+      await Promise.all([refreshDepartments(), refreshUsers()]);
+      if (editDeptTarget?.id === deleteDeptTarget.id) {
+        closeEditDeptSheet();
+      }
+      setDeleteDeptTarget(null);
+      toast({
+        title: "Departamento eliminado",
+        description: `${deleteDeptTarget.name} fue eliminado.`,
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo eliminar el departamento",
+        description: error instanceof Error ? error.message : "Ocurrió un error inesperado.",
+        variant: "destructive",
+      });
+      setDeleteDeptTarget(null);
+    } finally {
+      setDeleteDeptLoading(false);
     }
   };
 
@@ -425,6 +631,19 @@ export default function AdminPage() {
                     </SheetHeader>
                     <form onSubmit={handleCreateUser} className="flex h-full flex-col">
                       <div className="grid gap-4 px-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="name">Nombre</Label>
+                          <Input
+                            id="name"
+                            required
+                            placeholder="María García"
+                            value={newUserForm.name}
+                            onChange={(e) =>
+                              setNewUserForm((prev) => ({ ...prev, name: e.target.value }))
+                            }
+                          />
+                        </div>
+
                         <div className="grid gap-2">
                           <Label htmlFor="department">Departamento</Label>
                           <Select
@@ -618,17 +837,31 @@ export default function AdminPage() {
                             />
                           </div>
                         </div>
-                        <SheetFooter className="mt-6 border-t">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => closeEditUserSheet()}
-                          >
-                            Cancelar
-                          </Button>
-                          <Button type="submit" disabled={editUserSaving}>
-                            {editUserSaving ? "Guardando…" : "Guardar cambios"}
-                          </Button>
+                        <SheetFooter className="mt-6 flex-col gap-3 border-t sm:flex-col">
+                          {!isEditingSelf && editUserTarget ? (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              className="w-full gap-2"
+                              onClick={() => setDeleteUserTarget(editUserTarget)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Eliminar usuario
+                            </Button>
+                          ) : null}
+                          <div className="flex w-full gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => closeEditUserSheet()}
+                            >
+                              Cancelar
+                            </Button>
+                            <Button type="submit" className="flex-1" disabled={editUserSaving}>
+                              {editUserSaving ? "Guardando…" : "Guardar cambios"}
+                            </Button>
+                          </div>
                         </SheetFooter>
                       </form>
                     )}
@@ -694,19 +927,36 @@ export default function AdminPage() {
                             {user.department}
                           </p>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void openEditUser(user);
-                          }}
-                          aria-label="Editar usuario"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void openEditUser(user);
+                            }}
+                            aria-label="Editar usuario"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {authUser?.id !== user.id ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteUserTarget(user);
+                              }}
+                              aria-label="Eliminar usuario"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                        </div>
                       </motion.div>
                     );
                   })}
@@ -723,11 +973,20 @@ export default function AdminPage() {
               transition={{ duration: 0.4, delay: 0.25 }}
             >
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="flex items-center gap-2 text-sm">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     Departamentos
                   </CardTitle>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1 h-8"
+                    onClick={() => setIsCreateDeptOpen(true)}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Nuevo
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -737,7 +996,16 @@ export default function AdminPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: 0.3 + index * 0.03 }}
+                        role="button"
+                        tabIndex={0}
                         className="group flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
+                        onClick={() => void openEditDepartment(dept)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            void openEditDepartment(dept);
+                          }
+                        }}
                       >
                         <div
                           className="h-3 w-3 rounded-full flex-shrink-0"
@@ -747,6 +1015,34 @@ export default function AdminPage() {
                           <p className="text-sm font-medium text-foreground">
                             {dept.name}
                           </p>
+                        </div>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void openEditDepartment(dept);
+                            }}
+                            aria-label="Editar departamento"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteDeptTarget(dept);
+                            }}
+                            aria-label="Eliminar departamento"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </motion.div>
                     ))}
@@ -820,9 +1116,28 @@ export default function AdminPage() {
                         —
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => void openEditDepartment(dept)}
+                            aria-label="Editar departamento"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteDeptTarget(dept)}
+                            aria-label="Eliminar departamento"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -832,6 +1147,232 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Crear departamento */}
+        <Sheet
+          open={isCreateDeptOpen}
+          onOpenChange={(open) => {
+            setIsCreateDeptOpen(open);
+            if (!open) resetCreateDeptForm();
+          }}
+        >
+          <SheetContent side="right" className="sm:max-w-md">
+            <SheetHeader>
+              <SheetTitle>Crear departamento</SheetTitle>
+              <SheetDescription>
+                El departamento se asociará a tu empresa.
+              </SheetDescription>
+            </SheetHeader>
+            <form onSubmit={handleCreateDepartment} className="flex h-full flex-col">
+              <div className="grid gap-4 px-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="dept-name">Nombre</Label>
+                  <Input
+                    id="dept-name"
+                    required
+                    placeholder="Ej. Comercial"
+                    value={createDeptForm.name}
+                    onChange={(e) =>
+                      setCreateDeptForm((p) => ({ ...p, name: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="dept-color">Color</Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="dept-color"
+                      type="color"
+                      className="h-10 w-14 cursor-pointer p-1"
+                      value={createDeptForm.color}
+                      onChange={(e) =>
+                        setCreateDeptForm((p) => ({ ...p, color: e.target.value }))
+                      }
+                    />
+                    <span className="text-sm text-muted-foreground font-mono">
+                      {createDeptForm.color}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <SheetFooter className="mt-6 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreateDeptOpen(false);
+                    resetCreateDeptForm();
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isCreatingDept}>
+                  {isCreatingDept ? "Creando…" : "Crear departamento"}
+                </Button>
+              </SheetFooter>
+            </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Editar departamento */}
+        <Sheet
+          open={isEditDeptOpen}
+          onOpenChange={(open) => {
+            if (!open) closeEditDeptSheet();
+          }}
+        >
+          <SheetContent side="right" className="sm:max-w-md">
+            <SheetHeader>
+              <SheetTitle>Editar departamento</SheetTitle>
+              <SheetDescription>Nombre y color del departamento.</SheetDescription>
+            </SheetHeader>
+            {editDeptLoading ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground text-sm">
+                Cargando…
+              </div>
+            ) : (
+              <form onSubmit={handleEditDepartmentSubmit} className="flex h-full flex-col">
+                <div className="grid gap-4 px-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-dept-name">Nombre</Label>
+                    <Input
+                      id="edit-dept-name"
+                      required
+                      value={editDeptForm.name}
+                      onChange={(e) =>
+                        setEditDeptForm((p) => ({ ...p, name: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-dept-color">Color</Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        id="edit-dept-color"
+                        type="color"
+                        className="h-10 w-14 cursor-pointer p-1"
+                        value={editDeptForm.color}
+                        onChange={(e) =>
+                          setEditDeptForm((p) => ({ ...p, color: e.target.value }))
+                        }
+                      />
+                      <span className="text-sm text-muted-foreground font-mono">
+                        {editDeptForm.color}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <SheetFooter className="mt-6 flex-col gap-3 border-t sm:flex-col">
+                  {editDeptTarget ? (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="w-full gap-2"
+                      onClick={() => setDeleteDeptTarget(editDeptTarget)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Eliminar departamento
+                    </Button>
+                  ) : null}
+                  <div className="flex w-full gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => closeEditDeptSheet()}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={editDeptSaving}>
+                      {editDeptSaving ? "Guardando…" : "Guardar cambios"}
+                    </Button>
+                  </div>
+                </SheetFooter>
+              </form>
+            )}
+          </SheetContent>
+        </Sheet>
+
+        {/* Confirmar eliminación de usuario */}
+        <AlertDialog
+          open={!!deleteUserTarget}
+          onOpenChange={(open) => !open && setDeleteUserTarget(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
+              <AlertDialogDescription>
+                <span className="font-semibold text-foreground">
+                  {deleteUserTarget?.name}
+                </span>{" "}
+                dejará de aparecer en el listado y no podrá asignarse a nuevos
+                objetivos, departamentos ni REMIs. Sus asignaciones actuales se
+                conservarán con su nombre.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleteUserLoading}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleDeleteUser();
+                }}
+                disabled={deleteUserLoading}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteUserLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Eliminando…
+                  </>
+                ) : (
+                  "Sí, eliminar"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Confirmar eliminación de departamento */}
+        <AlertDialog
+          open={!!deleteDeptTarget}
+          onOpenChange={(open) => !open && setDeleteDeptTarget(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar departamento?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminará permanentemente el departamento{" "}
+                <span className="font-semibold text-foreground">
+                  {deleteDeptTarget?.name}
+                </span>
+                . Los usuarios, objetivos y REMIs vinculados quedarán sin
+                departamento asignado, pero se conservarán. Esta acción no se puede
+                deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleteDeptLoading}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleDeleteDepartment();
+                }}
+                disabled={deleteDeptLoading}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteDeptLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Eliminando…
+                  </>
+                ) : (
+                  "Sí, eliminar"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppShell>
   );

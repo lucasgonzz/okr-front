@@ -69,7 +69,7 @@ export interface Objective {
   id: string;
   title: string;
   description: string;
-  department: Department;
+  department: Department | null;
   quarter: Quarter;
   quarterId?: string | null;
   quarterModel?: QuarterModel | null;

@@ -22,7 +22,9 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
+import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
+import { canManageDepartmentResource } from "@/lib/permissions";
 import type { Objective, Quarter, ObjectiveStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +36,8 @@ interface ObjectiveFormProps {
 }
 
 export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormProps) {
+  const { user } = useAuth();
+  const isStandardUser = user?.role === "user";
   const {
     addObjective,
     updateObjective,
@@ -90,7 +94,7 @@ export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormP
       if (mode === "edit" && objective) {
         setTitle(objective.title ?? "");
         setDescription(objective.description ?? "");
-        setDepartmentId(objective.department.id);
+        setDepartmentId(objective.department?.id ?? "none");
         setOwnerId(objective.owner.id);
         setQuarter(objective.quarter);
         setRemiId(objective.remi?.id || "none");
@@ -101,8 +105,8 @@ export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormP
         // Create mode - reset to defaults
         setTitle("");
         setDescription("");
-        setDepartmentId("");
-        setOwnerId("");
+        setDepartmentId(isStandardUser && user?.departmentId ? user.departmentId : "");
+        setOwnerId(isStandardUser && user?.id ? user.id : "");
         setQuarter(quarters[0]?.name || "Q1-2025");
         setRemiId("none");
         setCalculationMode("automatic");
@@ -110,15 +114,33 @@ export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormP
         setManualStatus("");
       }
     }
-  }, [open, mode, objective, quarters]);
+  }, [open, mode, objective, quarters, isStandardUser, user?.departmentId, user?.id]);
+
+  const availableDepartments =
+    isStandardUser && user?.departmentId
+      ? departments.filter((d) => d.id === user.departmentId)
+      : departments;
 
   const handleSubmit = async () => {
-    if (!title.trim() || !departmentId || !ownerId) return;
+    if (!title.trim() || !ownerId) return;
+    if (mode === "create" && (!departmentId || departmentId === "none")) return;
 
-    const selectedDepartment = departments.find((d) => d.id === departmentId);
+    if (
+      mode === "edit" &&
+      objective &&
+      !canManageDepartmentResource(user, objective.department?.id)
+    ) {
+      return;
+    }
+
+    const selectedDepartment =
+      departmentId && departmentId !== "none"
+        ? departments.find((d) => d.id === departmentId) ?? null
+        : null;
     const selectedOwner = users.find((u) => u.id === ownerId);
     const selectedRemi = remiId !== "none" ? remis.find((r) => r.id === remiId) || null : null;
-    if (!selectedDepartment || !selectedOwner) return;
+    if (mode === "create" && !selectedDepartment) return;
+    if (!selectedOwner) return;
 
     setIsSubmitting(true);
     try {
@@ -208,13 +230,20 @@ export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormP
 
           {/* Departamento */}
           <div className="space-y-2">
-            <Label>Departamento *</Label>
-            <Select value={departmentId} onValueChange={setDepartmentId}>
+            <Label>Departamento{mode === "create" ? " *" : ""}</Label>
+            <Select
+              value={departmentId}
+              onValueChange={setDepartmentId}
+              disabled={isStandardUser}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un departamento" />
               </SelectTrigger>
               <SelectContent>
-                {departments.map((dept) => (
+                {!isStandardUser && (
+                  <SelectItem value="none">Sin departamento</SelectItem>
+                )}
+                {availableDepartments.map((dept) => (
                   <SelectItem key={dept.id} value={dept.id}>
                     <div className="flex items-center gap-2">
                       <div
@@ -353,7 +382,15 @@ export function ObjectiveForm({ open, onClose, mode, objective }: ObjectiveFormP
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !title.trim() || !departmentId || !ownerId}>
+          <Button
+            onClick={handleSubmit}
+            disabled={
+              isSubmitting ||
+              !title.trim() ||
+              !ownerId ||
+              (mode === "create" && (!departmentId || departmentId === "none"))
+            }
+          >
             {isSubmitting ? <Spinner className="mr-2" /> : null}
             {isSubmitting ? (mode === "create" ? "Creando..." : "Guardando...") : "Guardar"}
           </Button>

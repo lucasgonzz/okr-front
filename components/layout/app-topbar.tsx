@@ -24,12 +24,18 @@ interface AppTopbarProps {
 
 export function AppTopbar({
   className,
-  selectedQuarter = "Q4-2024",
+  selectedQuarter = "",
   onQuarterChange,
   onMenuClick,
 }: AppTopbarProps) {
   const { user } = useAuth();
-  const { quarters } = useData();
+  const { quarters, quarters_loading } = useData();
+
+  const quarter_names = quarters.map((q) => q.name);
+  const effective_quarter =
+    selectedQuarter && quarter_names.includes(selectedQuarter)
+      ? selectedQuarter
+      : quarter_names[0] ?? "";
 
   return (
     <header
@@ -55,11 +61,14 @@ export function AppTopbar({
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <Select
-            value={selectedQuarter}
+            value={effective_quarter || undefined}
             onValueChange={(value) => onQuarterChange?.(value as Quarter)}
+            disabled={quarters_loading || quarters.length === 0}
           >
             <SelectTrigger className="w-auto min-w-[110px] border-0 bg-secondary/50 font-medium">
-              <SelectValue />
+              <SelectValue
+                placeholder={quarters_loading ? "Cargando..." : "Sin trimestres"}
+              />
             </SelectTrigger>
             <SelectContent>
               {quarters.map((q) => (

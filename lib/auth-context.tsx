@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       return {
         success: false,
-        error: err instanceof Error ? err.message : "Login failed",
+        error: err instanceof Error ? err.message : "Error al iniciar sesión",
       };
     }
   };

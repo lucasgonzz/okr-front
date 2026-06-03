@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import type { Department, Objective, KeyResult, QuarterModel, REMI, User } from "@/lib/types";
 import { resolveCurrentQuarterName } from "@/lib/quarter-utils";
 
@@ -19,6 +20,7 @@ interface DataContextType {
   users: User[];
   departments: Department[];
   quarters: QuarterModel[];
+  quarters_loading: boolean;
   selected_quarter: string;
   set_selected_quarter: (quarter: string) => void;
   is_loading: boolean;
@@ -53,14 +55,16 @@ function applyObjectiveToState(
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
+  const { user, isLoading: auth_loading } = useAuth();
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [remis, setRemis] = useState<REMI[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [quarters, setQuarters] = useState<QuarterModel[]>([]);
-  const [selected_quarter, set_selected_quarter] = useState<string>("Q4-2024");
+  const [quarters_loading, set_quarters_loading] = useState(false);
+  const [selected_quarter, set_selected_quarter] = useState<string>("");
   const [quarter_initialized, set_quarter_initialized] = useState(false);
-  const [is_loading, set_is_loading] = useState<boolean>(true);
+  const [is_loading, set_is_loading] = useState<boolean>(false);
 
   const refreshObjectives = useCallback(async (quarterOverride?: string) => {
     const quarter = quarterOverride ?? selected_quarter;
@@ -114,16 +118,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshQuarters = useCallback(async () => {
-    set_is_loading(true);
+    if (!user) return;
+    set_quarters_loading(true);
     try {
       const quarters_res = await apiFetch<{ data: QuarterModel[] }>("/quarters");
       setQuarters(quarters_res.data || []);
     } catch {
       setQuarters([]);
     } finally {
-      set_is_loading(false);
+      set_quarters_loading(false);
     }
-  }, []);
+  }, [user]);
 
   const refreshData = useCallback(async () => {
     set_is_loading(true);
@@ -148,26 +153,39 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [selected_quarter]);
 
+  // Cargar trimestres solo con sesión activa (evita fallo en /login sin token).
   useEffect(() => {
-    void refreshQuarters();
-  }, [refreshQuarters]);
-
-  // Inicializa el trimestre seleccionado al trimestre vigente una sola vez,
-  // cuando los quarters cargan por primera vez.
-  useEffect(() => {
-    if (quarter_initialized || quarters.length === 0) return;
-    const current = resolveCurrentQuarterName(quarters);
-    if (current) {
-      set_selected_quarter(current);
-      set_quarter_initialized(true);
+    if (auth_loading) return;
+    if (!user) {
+      setQuarters([]);
+      set_quarter_initialized(false);
+      set_selected_quarter("");
+      return;
     }
-  }, [quarters, quarter_initialized]);
+    void refreshQuarters();
+  }, [auth_loading, user, refreshQuarters]);
+
+  // Inicializa o corrige el trimestre seleccionado cuando llegan los quarters.
+  useEffect(() => {
+    if (quarters.length === 0) return;
+
+    const names = quarters.map((q) => q.name);
+    const selected_is_valid = selected_quarter && names.includes(selected_quarter);
+
+    if (!quarter_initialized || !selected_is_valid) {
+      const current = resolveCurrentQuarterName(quarters);
+      if (current) {
+        set_selected_quarter(current);
+        set_quarter_initialized(true);
+      }
+    }
+  }, [quarters, quarter_initialized, selected_quarter]);
 
   const addObjective = async (objective: Objective) => {
     const payload = {
       title: objective.title,
       description: objective.description,
-      department_id: objective.department.id,
+      department_id: objective.department?.id ?? null,
       owner_id: objective.owner.id,
       quarter: objective.quarter,
       quarter_id: objective.quarterId,
@@ -192,7 +210,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const payload: Record<string, unknown> = {};
       if (updates.title !== undefined) payload.title = updates.title;
       if (updates.description !== undefined) payload.description = updates.description;
-      if (updates.department?.id !== undefined) payload.department_id = updates.department.id;
+      if (updates.department === null) payload.department_id = null;
+      else if (updates.department?.id !== undefined) payload.department_id = updates.department.id;
       if (updates.owner?.id !== undefined) payload.owner_id = updates.owner.id;
       if (updates.quarter !== undefined) payload.quarter = updates.quarter;
       if (updates.quarterId !== undefined) payload.quarter_id = updates.quarterId;
@@ -338,6 +357,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       users,
       departments,
       quarters,
+      quarters_loading,
       selected_quarter,
       set_selected_quarter,
       is_loading,
@@ -360,6 +380,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       users,
       departments,
       quarters,
+      quarters_loading,
       selected_quarter,
       is_loading,
       refreshObjectives,

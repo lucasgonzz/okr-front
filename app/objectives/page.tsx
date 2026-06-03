@@ -18,7 +18,14 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
+import {
+  objectiveDepartmentColor,
+  objectiveDepartmentId,
+  objectiveDepartmentName,
+} from "@/lib/objective-department";
+import { canManageDepartmentResource } from "@/lib/permissions";
 import { calculateObjectiveProgress } from "@/lib/okr-calculations";
 import { ObjectiveForm } from "@/components/okr/objective-form";
 import type { Quarter, ObjectiveStatus, Objective } from "@/lib/types";
@@ -86,12 +93,14 @@ function ObjectiveRow({
   onEdit,
   onDelete,
   isDeleting,
+  canManage,
 }: {
   objective: Objective;
   index: number;
   onEdit: (objective: Objective) => void;
   onDelete: (objective: Objective) => void;
   isDeleting: boolean;
+  canManage: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const calculated = calculateObjectiveProgress(objective);
@@ -121,12 +130,12 @@ function ObjectiveRow({
           </motion.div>
           <div
             className="h-3 w-3 rounded-full flex-shrink-0"
-            style={{ backgroundColor: objective.department.color }}
+            style={{ backgroundColor: objectiveDepartmentColor(objective.department) }}
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-xs font-medium text-muted-foreground">
-                {objective.department.name}
+                {objectiveDepartmentName(objective.department)}
               </span>
               {objective.remi && (
                 <>
@@ -194,31 +203,35 @@ function ObjectiveRow({
 
         {/* Acciones */}
         <div className="flex justify-center items-center gap-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(objective);
-            }}
-            className="p-1.5 rounded hover:bg-primary/10 transition-all"
-            title="Editar objetivo"
-          >
-            <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(objective);
-            }}
-            disabled={isDeleting}
-            className="p-1.5 rounded hover:bg-destructive/10 transition-all"
-            title="Eliminar objetivo"
-          >
-            {isDeleting ? (
-              <Spinner className="h-3.5 w-3.5 text-muted-foreground" />
-            ) : (
-              <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-            )}
-          </button>
+          {canManage && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(objective);
+                }}
+                className="p-1.5 rounded hover:bg-primary/10 transition-all"
+                title="Editar objetivo"
+              >
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(objective);
+                }}
+                disabled={isDeleting}
+                className="p-1.5 rounded hover:bg-destructive/10 transition-all"
+                title="Eliminar objetivo"
+              >
+                {isDeleting ? (
+                  <Spinner className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                )}
+              </button>
+            </>
+          )}
           <Link
             href={`/objectives/${objective.id}`}
             onClick={(e) => e.stopPropagation()}
@@ -331,6 +344,7 @@ function ObjectivesContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const {
     objectives,
     remis,
@@ -368,6 +382,11 @@ function ObjectivesContent() {
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [remiFilter, setRemiFilter] = useState(initialRemi);
   const [sortBy, setSortBy] = useState<"progress" | "title">("title");
+
+  const canCreateObjective =
+    user?.role === "admin" ||
+    user?.role === "super_admin" ||
+    Boolean(user?.departmentId);
 
   useEffect(() => {
     if (pathname !== "/objectives" || quarters.length === 0) return;
@@ -418,7 +437,12 @@ function ObjectivesContent() {
         if (calculated.status !== statusFilter) return false;
       }
       
-      if (departmentFilter !== "all" && obj.department.id !== departmentFilter) {
+      if (departmentFilter === "none") {
+        if (obj.department) return false;
+      } else if (
+        departmentFilter !== "all" &&
+        objectiveDepartmentId(obj.department) !== departmentFilter
+      ) {
         return false;
       }
       if (ownerFilter !== "all" && obj.owner.id !== ownerFilter) {
@@ -510,16 +534,18 @@ function ObjectivesContent() {
               Vista jerárquica de todos los objetivos y resultados clave
             </p>
           </motion.div>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-          >
-            <Button onClick={() => { setEditingObjective(null); setFormOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Objetivo
-            </Button>
-          </motion.div>
+          {canCreateObjective && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <Button onClick={() => { setEditingObjective(null); setFormOpen(true); }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Objetivo
+              </Button>
+            </motion.div>
+          )}
         </div>
 
         {/* Filters */}
@@ -590,6 +616,7 @@ function ObjectivesContent() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los Deptos</SelectItem>
+                <SelectItem value="none">Sin departamento</SelectItem>
                 {departments.map((dept) => (
                   <SelectItem key={dept.id} value={dept.id}>
                     {dept.name}
@@ -718,13 +745,17 @@ function ObjectivesContent() {
                 </div>
               ) : (
                 filteredObjectives.map((objective, index) => (
-                  <ObjectiveRow 
-                        key={objective.id} 
-                        objective={objective} 
+                  <ObjectiveRow
+                        key={objective.id}
+                        objective={objective}
                         index={index}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                     isDeleting={deletingObjectiveId === objective.id}
+                    canManage={canManageDepartmentResource(
+                      user,
+                      objectiveDepartmentId(objective.department)
+                    )}
                       />
                 ))
               )}

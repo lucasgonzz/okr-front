@@ -52,7 +52,7 @@ export default function DepartmentsPage() {
   const departmentStats = useMemo(() => {
     return departments.map((department) => {
       const department_objectives = objectives.filter(
-        (objective) => objective.department.id === department.id
+        (objective) => objective.department?.id === department.id
       );
 
       const at_risk_count = department_objectives.filter(

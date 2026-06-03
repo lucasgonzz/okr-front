@@ -13,7 +13,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { calculateObjectiveProgress } from "@/lib/okr-calculations";
+import { useAuth } from "@/lib/auth-context";
 import { useData } from "@/lib/data-context";
+import {
+  objectiveDepartmentColor,
+  objectiveDepartmentId,
+  objectiveDepartmentName,
+} from "@/lib/objective-department";
+import { canManageDepartmentResource } from "@/lib/permissions";
 import { ObjectiveForm } from "@/components/okr/objective-form";
 import { KeyResultForm } from "@/components/okr/key-result-form";
 import type { Quarter, KeyResult, Objective } from "@/lib/types";
@@ -56,6 +63,7 @@ function KeyResultCard({
   onEdit,
   onDelete,
   onQuickUpdate,
+  canManage,
 }: {
   keyResult: KeyResult;
   index: number;
@@ -63,6 +71,7 @@ function KeyResultCard({
   onEdit: (kr: KeyResult) => void;
   onDelete: (kr: KeyResult) => void;
   onQuickUpdate: (krId: string, currentValue: number) => void;
+  canManage: boolean;
 }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [quickValue, setQuickValue] = useState(keyResult.currentValue);
@@ -80,22 +89,24 @@ function KeyResultCard({
       className="group rounded-xl border border-border bg-card p-5 relative"
     >
       {/* Edit/Delete Actions */}
-      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={() => onEdit(keyResult)}
-          className="p-1.5 rounded hover:bg-primary/10 transition-colors"
-          title="Editar key result"
-        >
-          <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
-        </button>
-        <button
-          onClick={() => onDelete(keyResult)}
-          className="p-1.5 rounded hover:bg-destructive/10 transition-colors"
-          title="Eliminar key result"
-        >
-          <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-        </button>
-      </div>
+      {canManage && (
+        <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onEdit(keyResult)}
+            className="p-1.5 rounded hover:bg-primary/10 transition-colors"
+            title="Editar key result"
+          >
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+          </button>
+          <button
+            onClick={() => onDelete(keyResult)}
+            className="p-1.5 rounded hover:bg-destructive/10 transition-colors"
+            title="Eliminar key result"
+          >
+            <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+          </button>
+        </div>
+      )}
 
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex-1">
@@ -157,7 +168,7 @@ function KeyResultCard({
       <ProgressBar value={keyResult.progress} size="md" showLabel={false} />
 
       {/* Quick Update */}
-      {!isUpdating ? (
+      {canManage && !isUpdating ? (
         <button
           onClick={() => {
             setQuickValue(keyResult.currentValue);
@@ -167,7 +178,7 @@ function KeyResultCard({
         >
           Actualizar valor
         </button>
-      ) : (
+      ) : canManage ? (
         <div className="mt-3 flex items-center gap-2">
           <Input
             type="number"
@@ -185,7 +196,7 @@ function KeyResultCard({
             <X className="h-3.5 w-3.5" />
           </Button>
         </div>
-      )}
+      ) : null}
 
       {/* Blockers - only show if not empty */}
       {keyResult.blockers && (
@@ -243,6 +254,7 @@ function useObjectiveId(serverId: string): string {
 
 export function ObjectiveDetailPageClient({ id: serverId }: { id: string }) {
   const id = useObjectiveId(serverId);
+  const { user } = useAuth();
   const {
     objectives,
     updateKeyResult,
@@ -313,6 +325,9 @@ export function ObjectiveDetailPageClient({ id: serverId }: { id: string }) {
   }, [objectiveFromList]);
 
   const objective = detail;
+  const canManageObjective = objective
+    ? canManageDepartmentResource(user, objectiveDepartmentId(objective.department))
+    : false;
 
   // CRUD handlers
   const handleEditKr = (kr: KeyResult) => {
@@ -440,10 +455,12 @@ export function ObjectiveDetailPageClient({ id: serverId }: { id: string }) {
               Volver a Objetivos
             </Button>
           </Link>
-          <Button variant="outline" size="sm" onClick={() => setObjectiveFormOpen(true)}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Editar Objetivo
-          </Button>
+          {canManageObjective && (
+            <Button variant="outline" size="sm" onClick={() => setObjectiveFormOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Editar Objetivo
+            </Button>
+          )}
         </motion.div>
 
         {/* Header Section */}
@@ -464,10 +481,10 @@ export function ObjectiveDetailPageClient({ id: serverId }: { id: string }) {
               <div className="flex items-center gap-3 mb-2">
                 <div
                   className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: objective.department.color }}
+                  style={{ backgroundColor: objectiveDepartmentColor(objective.department) }}
                 />
                 <span className="text-sm font-medium text-muted-foreground">
-                  {objective.department.name}
+                  {objectiveDepartmentName(objective.department)}
                 </span>
                 <span className="text-muted-foreground">•</span>
                 <span className="text-sm text-muted-foreground">
@@ -502,7 +519,7 @@ export function ObjectiveDetailPageClient({ id: serverId }: { id: string }) {
               <div>
                 <p className="text-xs text-muted-foreground">Departamento</p>
                 <p className="text-sm font-medium text-foreground">
-                  {objective.department.name}
+                  {objectiveDepartmentName(objective.department)}
                 </p>
               </div>
             </div>
@@ -576,16 +593,18 @@ export function ObjectiveDetailPageClient({ id: serverId }: { id: string }) {
                   <Target className="h-5 w-5 text-primary" />
                   Key Results ({objective.keyResults.length})
                 </h2>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditingKr(null);
-                    setKrFormOpen(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Key Result
-                </Button>
+                {canManageObjective && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditingKr(null);
+                      setKrFormOpen(true);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Key Result
+                  </Button>
+                )}
               </div>
               <div className="space-y-4">
                 {isSavingQuickUpdate ? (
@@ -603,6 +622,7 @@ export function ObjectiveDetailPageClient({ id: serverId }: { id: string }) {
                     onEdit={handleEditKr}
                     onDelete={handleDeleteKr}
                     onQuickUpdate={handleQuickUpdate}
+                    canManage={canManageObjective}
                   />
                 ))}
               </div>

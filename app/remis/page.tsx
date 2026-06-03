@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { calculateObjectiveProgress } from "@/lib/okr-calculations";
+import {
+  objectiveDepartmentColor,
+  objectiveDepartmentName,
+} from "@/lib/objective-department";
 import { useData } from "@/lib/data-context";
 import { apiFetch } from "@/lib/api";
 import { Input } from "@/components/ui/input";
@@ -54,6 +58,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 function clamp_remi_progreso_manual(value: number): number {
   const n = Number.isFinite(value) ? Math.round(value) : 0;
@@ -382,14 +387,16 @@ function REMICard({
                             <div className="flex items-center gap-4 p-3 rounded-lg border border-border hover:border-primary/30 hover:bg-secondary/30 transition-colors">
                               <div
                                 className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: obj.department.color }}
+                                style={{
+                                  backgroundColor: objectiveDepartmentColor(obj.department),
+                                }}
                               />
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                                   {obj.title}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {obj.department.name} • {obj.owner.name}
+                                  {objectiveDepartmentName(obj.department)} • {obj.owner.name}
                                 </p>
                               </div>
                               <div className="flex items-center gap-3">
@@ -450,7 +457,7 @@ export default function REMIsPage() {
     refreshQuarters,
     is_loading,
   } = useData();
-  const [selectedQuarter, setSelectedQuarter] = useState<Quarter>(selected_quarter as Quarter);
+  const { toast } = useToast();
 
   // ── Create REMI state ──────────────────────────────────────────────────────
   const [is_create_modal_open, set_is_create_modal_open] = useState(false);
@@ -474,8 +481,8 @@ export default function REMIsPage() {
   const [is_saving_edit, set_is_saving_edit] = useState(false);
 
   useEffect(() => {
-    void Promise.all([refreshObjectives(), refreshRemis()]);
-  }, [refreshObjectives, refreshRemis]);
+    void Promise.all([refreshQuarters(), refreshObjectives(), refreshRemis()]);
+  }, [refreshQuarters, refreshObjectives, refreshRemis]);
 
   useEffect(() => {
     if (!is_create_modal_open && !is_edit_sheet_open) return;
@@ -496,23 +503,23 @@ export default function REMIsPage() {
   // ── REMIs filtered by selected quarter ────────────────────────────────────
   const filteredRemis = useMemo(() => {
     return remis.filter((remi) => {
-      if (!remi.quarters || remi.quarters.length === 0) return true;
-      return remi.quarters.some((q) => q.name === selectedQuarter);
+      if (!selected_quarter || !remi.quarters || remi.quarters.length === 0) return true;
+      return remi.quarters.some((q) => q.name === selected_quarter);
     });
-  }, [remis, selectedQuarter]);
+  }, [remis, selected_quarter]);
 
   // ── Objectives grouped by REMI ─────────────────────────────────────────────
   const remiObjectivesMap = useMemo(() => {
     const map = new Map<string, Objective[]>();
     objectives.forEach((obj) => {
-      if (obj.remi && obj.quarter === selectedQuarter) {
+      if (obj.remi && obj.quarter === selected_quarter) {
         const existing = map.get(obj.remi.id) || [];
         existing.push(obj);
         map.set(obj.remi.id, existing);
       }
     });
     return map;
-  }, [selectedQuarter, objectives]);
+  }, [selected_quarter, objectives]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -531,6 +538,13 @@ export default function REMIsPage() {
       }),
     })
       .then(() => {
+        if (new_quarter_ids.length > 0) {
+          const assigned_quarters = quarters.filter((q) => new_quarter_ids.includes(q.id));
+          const visible_in_current = assigned_quarters.some((q) => q.name === selected_quarter);
+          if (!visible_in_current && assigned_quarters[0]) {
+            set_selected_quarter(assigned_quarters[0].name);
+          }
+        }
         set_is_create_modal_open(false);
         set_new_remi_name("");
         set_new_remi_description("");
@@ -539,6 +553,13 @@ export default function REMIsPage() {
         set_new_remi_progress(0);
         set_new_quarter_ids([]);
         return refreshRemis();
+      })
+      .catch((error: unknown) => {
+        toast({
+          title: "No se pudo crear el REMI",
+          description: error instanceof Error ? error.message : "Error desconocido",
+          variant: "destructive",
+        });
       })
       .finally(() => set_is_saving_remi(false));
   };
@@ -572,16 +593,20 @@ export default function REMIsPage() {
         set_is_edit_sheet_open(false);
         return refreshRemis();
       })
+      .catch((error: unknown) => {
+        toast({
+          title: "No se pudo guardar el REMI",
+          description: error instanceof Error ? error.message : "Error desconocido",
+          variant: "destructive",
+        });
+      })
       .finally(() => set_is_saving_edit(false));
   };
 
   return (
     <AppShell
-      selectedQuarter={selectedQuarter}
-      onQuarterChange={(quarter) => {
-        setSelectedQuarter(quarter);
-        set_selected_quarter(quarter);
-      }}
+      selectedQuarter={selected_quarter}
+      onQuarterChange={set_selected_quarter}
     >
       <div className="mx-auto max-w-[1200px]">
         {/* Page Header */}
@@ -611,16 +636,32 @@ export default function REMIsPage() {
               <Spinner className="mb-3 h-6 w-6 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Cargando REMIs...</p>
             </div>
-          ) : filteredRemis.map((remi, index) => (
-            <REMICard
-              key={remi.id}
-              remi={remi}
-              associatedObjectives={remiObjectivesMap.get(remi.id) || []}
-              index={index}
-              progress={remi.progresoManual ?? 0}
-              onEdit={handle_open_edit}
-            />
-          ))}
+          ) : filteredRemis.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-10 text-center">
+              <Flag className="mb-3 h-10 w-10 text-muted-foreground/40" />
+              <p className="text-sm font-medium text-foreground">
+                {selected_quarter
+                  ? `No hay REMIs para ${selected_quarter}`
+                  : "No hay REMIs para mostrar"}
+              </p>
+              <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                {remis.length > 0
+                  ? "Probá otro trimestre en el selector superior o editá un REMI para asociarlo a este período."
+                  : "Creá el primero con el botón «Nuevo REMI»."}
+              </p>
+            </div>
+          ) : (
+            filteredRemis.map((remi, index) => (
+              <REMICard
+                key={remi.id}
+                remi={remi}
+                associatedObjectives={remiObjectivesMap.get(remi.id) || []}
+                index={index}
+                progress={remi.progresoManual ?? 0}
+                onEdit={handle_open_edit}
+              />
+            ))
+          )}
         </div>
       </div>
 

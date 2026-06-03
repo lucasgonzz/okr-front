@@ -43,10 +43,20 @@ export async function apiFetch<T = unknown>(
   });
 
   if (!res.ok) {
-    let message = `API error ${res.status}`;
+    let message = `Error de API ${res.status}`;
     try {
       const body = await res.json();
-      message = body?.message ?? message;
+      const errors = body?.errors;
+      if (errors && typeof errors === "object") {
+        for (const fieldErrors of Object.values(errors)) {
+          if (Array.isArray(fieldErrors) && fieldErrors[0]) {
+            message = String(fieldErrors[0]);
+            break;
+          }
+        }
+      } else if (body?.message) {
+        message = body.message;
+      }
     } catch {
       // non-JSON body, keep default message
     }

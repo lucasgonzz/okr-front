@@ -13,6 +13,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "./status-badge";
 import { ProgressBar } from "./progress-bar";
+import {
+  objectiveDepartmentColor,
+  objectiveDepartmentName,
+} from "@/lib/objective-department";
 import type { Objective } from "@/lib/types";
 import { format } from "date-fns";
 
@@ -77,10 +81,10 @@ export function DataTable({ objectives, className, onRowClick }: DataTableProps)
                 <div className="flex items-center gap-2">
                   <span
                     className="h-2 w-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: objective.department.color }}
+                    style={{ backgroundColor: objectiveDepartmentColor(objective.department) }}
                   />
                   <span className="text-sm text-muted-foreground">
-                    {objective.department.name}
+                    {objectiveDepartmentName(objective.department)}
                   </span>
                 </div>
               </TableCell>
